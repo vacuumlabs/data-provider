@@ -1,0 +1,17 @@
+{
+  "extends": "vacuumlabs",
+  "rules": {
+    "prefer-const": 0,
+    "comma-dangle": 0,
+    // Additional, per-project rules...
+    "no-multi-str": 0,
+    "max-len": [1, 115, 2],
+    "require-yield": 0,
+    "guard-for-in": 0,
+    "react/no-deprecated": 0,
+  },
+  "env": {
+    "node": true,
+    "browser": true,
+  },
+}
