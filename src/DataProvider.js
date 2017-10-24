@@ -79,7 +79,7 @@ export default class DataProvider {
       .then((data) => {
         if (!this.canceled()) {
           this.loaded = true
-          this.onData(JSON.parse(data))
+          this.onData(data)
         }
       }).catch((e) => {
         console.error(e) // eslint-disable-line no-console
