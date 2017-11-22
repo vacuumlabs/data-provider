@@ -1,0 +1,9 @@
+{
+  "short_name": "Message",
+  "name": "Message - Data Providers Usage Example",
+  "icons": [],
+  "start_url": "./index.html",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#ffffff"
+}
