@@ -1,17 +1,6 @@
 import {applyMiddleware, createStore} from 'redux'
 import {createLogger} from 'redux-logger'
-
-const reducer = (state, action) => {
-    switch (action.type) {
-        case 'msg-data':
-            const {title, body} = action.data
-            return {...state, title: title, body: body}
-        case 'toggle-post':
-            return {...state, showMessage: !state.showMessage}
-        default:
-            return state
-    }
-}
+import {reducer} from './reducers'
 
 const initialData = () => ({title: '...', body: '...', showMessage: false})
 

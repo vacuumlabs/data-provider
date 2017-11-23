@@ -1,3 +1,5 @@
+import {messageData} from "./actions"
+
 // this simple function returns a Promise with given data,
 // with a timed delay - to simulate some real API call 
 function getData(data) {
@@ -7,11 +9,7 @@ function getData(data) {
 getData.counter = 0
 
 const updateMessage = () => (ref, data, dispatch) => {
-    dispatch({
-        type: 'msg-data',
-        data: {...data},
-        description: `DataProvider ref=${ref}`,
-    })
+    dispatch(messageData(data, ref))
 }
 
 export const messageProvider = (needed = true) => ({

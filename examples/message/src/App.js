@@ -3,6 +3,7 @@ import {withDataProviders} from 'data-provider'
 import {connect} from 'react-redux'
 import {compose} from 'redux'
 import {messageProvider} from './dataProviders'
+import {toggleMessage} from "./actions"
 
 const Message = ({title, body}) => (
     <div className='message'>
@@ -12,6 +13,9 @@ const Message = ({title, body}) => (
 )
 
 // MessageContainer uses a data-provider with needed === true
+// - order of connect / withDataProviders is important here, since when data is fetched
+// and dispatched by parent DP, this connect component needs to react to state change - it wouldn't be able to,
+// if it was "under" this DP, because it didn't exist yet
 const MessageContainer = compose(
     connect((state) => ({title: state.title, body: state.body})),
     withDataProviders(() => [messageProvider(true)]),
@@ -19,7 +23,9 @@ const MessageContainer = compose(
 
 const ToggleableMessageContainer = ({showMessage}) => (
     <div className='message-container'>
-        {showMessage ? <MessageContainer/> : <span>Click the Show button to show the message</span>}
+        {showMessage
+            ? <MessageContainer/>
+            : <span>Message data is being pre-loaded and will finish in 4 seconds<br />Click the Show button to show the message</span>}
     </div>
 )
 
@@ -29,14 +35,14 @@ const ParentMessageContainer = compose(
     connect((state) => ({showMessage: state.showMessage}))
 )(ToggleableMessageContainer)
 
-const AppContainer = ({showMessage, togglePost}) => (
+const AppContainer = ({showMessage, toggleMessage}) => (
     <div className="App">
-        <button onClick={togglePost}>{showMessage ? 'Hide' : 'Show'}</button>
+        <button onClick={toggleMessage}>{showMessage ? 'Hide' : 'Show'}</button>
         <ParentMessageContainer/>
     </div>
 )
 
 export const App = connect(
     ({showMessage}) => ({showMessage: showMessage}),
-    (dispatch) => ({togglePost: () => dispatch({type: 'toggle-post'})})
+    {toggleMessage}
 )(AppContainer)
