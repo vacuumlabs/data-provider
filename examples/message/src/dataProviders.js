@@ -1,21 +1,21 @@
-import {messageData} from "./actions"
+import {messageData} from './actions'
 
 // this simple function returns a Promise with given data,
-// with a timed delay - to simulate some real API call 
+// with a timed delay - to simulate some real API call
 function getData(data) {
-    data = {...data, body: `${data.body}, getData() called ${++getData.counter} times`}
-    return new Promise(resolve => setTimeout(resolve, 4 * 1000, data))
+  data = {...data, body: `${data.body}, getData() called ${++getData.counter} times`}
+  return new Promise((resolve) => setTimeout(resolve, 4 * 1000, data))
 }
 getData.counter = 0
 
 const updateMessage = () => (ref, data, dispatch) => {
-    dispatch(messageData(data, ref))
+  dispatch(messageData(data, ref))
 }
 
 export const messageProvider = (needed = true) => ({
-    ref: 'message',
-    getData: [getData, {title: 'Msg Title', body: 'Msg body'}],
-    onData: [updateMessage],
-    needed: needed,
-    initialData: null
+  ref: 'message',
+  getData: [getData, {title: 'Msg Title', body: 'Msg body'}],
+  onData: [updateMessage],
+  needed,
+  initialData: null
 })

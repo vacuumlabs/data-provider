@@ -1,13 +1,14 @@
-import {TOGGLE_MESSAGE, MESSAGE_DATA} from "./actions"
+import {TOGGLE_MESSAGE, MESSAGE_DATA} from './actions'
 
 export const reducer = (state, action) => {
-    switch (action.type) {
-        case MESSAGE_DATA:
-            const {title, body} = action.data
-            return {...state, title: title, body: body}
-        case TOGGLE_MESSAGE:
-            return {...state, showMessage: !state.showMessage}
-        default:
-            return state
+  switch (action.type) {
+    case MESSAGE_DATA: {
+      const {title, body} = action.data
+      return {...state, title, body}
     }
+    case TOGGLE_MESSAGE:
+      return {...state, showMessage: !state.showMessage}
+    default:
+      return state
+  }
 }

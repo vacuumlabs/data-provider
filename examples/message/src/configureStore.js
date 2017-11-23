@@ -5,5 +5,5 @@ import {reducer} from './reducers'
 const initialData = () => ({title: '...', body: '...', showMessage: false})
 
 export default function configureStore() {
-    return createStore(reducer, initialData(), applyMiddleware(createLogger()))
+  return createStore(reducer, initialData(), applyMiddleware(createLogger()))
 }
