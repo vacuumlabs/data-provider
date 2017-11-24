@@ -7,7 +7,7 @@
     "build": "rm -rf dist; babel --out-dir dist src/",
     "eslint": "eslint src test dist",
     "prepublish": "npm run build && npm run test",
-    "test": "npm run eslint"
+    "test": "npm run eslint && jest"
   },
   "keywords": [
     "synchronization",
@@ -42,6 +42,16 @@
     "eslint-config-vacuumlabs": "1",
     "eslint-plugin-import": "2",
     "eslint-plugin-react": "7",
-    "react": ">=16"
+    "jest": "^21.2.1",
+    "prop-types": "^15.6.0",
+    "react": "^16.1.1",
+    "react-dom": "^16.1.1",
+    "react-redux": "^5.0.6",
+    "redux": "^3.7.2"
+  },
+  "jest": {
+    "setupFiles": [
+      "<rootDir>/src/setupTests.js"
+    ]
   }
 }
