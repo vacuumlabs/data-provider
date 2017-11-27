@@ -3,44 +3,60 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
 import {withDataProviders} from './withDataProviders'
-import {compose, createStore} from 'redux'
-import {connect, Provider} from 'react-redux'
-import PropTypes from 'prop-types'
+import {compose} from 'redux'
+import {connect} from 'react-redux'
+import {newTestApp, getData, delayPromise} from './commonTests'
 
-test('test withDataProviders state change', () => {
-  const div = document.createElement('div')
-  ReactDOM.render(<App />, div)
+test('test withDataProviders (needed=true) state change', () => {
+  const root = renderMessageContainer(true)
 
-  let renderedMessage = div.querySelector('div.message')
+  let renderedMessage = root.querySelector('div.message')
   expect(renderedMessage).toBeNull()
-  return new Promise((resolve) => setTimeout(resolve, 0.2 * 1000))
-    .then(() => {
-      renderedMessage = div.querySelector('div.message')
-      expect(renderedMessage).not.toBeNull()
-    })
-
+  return delayPromise().then(() => {
+    renderedMessage = root.querySelector('div.message')
+    expect(renderedMessage).not.toBeNull()
+    expect(renderedMessage.textContent).toBe('Hello')
+  })
 })
 
-// TODO cleanup
+test('test withDataProviders (needed=false) state change', () => {
+  const root = renderMessageContainer(false)
 
-const store = createStore((state, action) => (
-  action.type === 'msg' ? {content: action.payload} : state
-), {content: ''})
+  let renderedMessage = root.querySelector('div.message')
+  expect(renderedMessage).not.toBeNull()
+  expect(renderedMessage.textContent).toBe('')
+  return delayPromise().then(() => {
+    renderedMessage = root.querySelector('div.message')
+    expect(renderedMessage).not.toBeNull()
+    expect(renderedMessage.textContent).toBe('Hello')
+  })
+})
 
-const getData = (data) => (
-  new Promise((resolve) => setTimeout(resolve, 0.1 * 1000, data))
-)
+// common functions, components
+
+function renderMessageContainer({needed}) {
+  const App = newTestApp()
+  const root = document.createElement('div')
+  const MessageContainer = messageContainer(false)
+  ReactDOM.render(<App><MessageContainer /></App>, root)
+  return root
+}
+
+const updateMessageAction = (data) => ({
+  type: 'msg',
+  payload: data,
+  reducer: (state, action) => ({...state, content: action.payload})
+})
 
 const updateMessage = () => (ref, data, dispatch) => {
-  dispatch({type: 'msg', payload: data.data})
+  dispatch(updateMessageAction(data.data))
 }
 
 const messageProvider = (needed = true) => ({
   ref: 'message',
   getData: [getData, {data: 'Hello'}],
   onData: [updateMessage],
-  needed,
-  // initialData: null
+  needed
 })
 
 const Message = ({content}) => (
@@ -48,29 +64,10 @@ const Message = ({content}) => (
     <p>{content}</p>
   </div>
 )
-const MessageContainer = compose(
-  connect((state) => ({content: state.content})),
-  withDataProviders(() => [messageProvider(true)]),
-)(Message)
 
-class DispatchProvider extends React.Component {
-  static childContextTypes = {
-    dispatch: PropTypes.func,
-  }
-
-  getChildContext() {
-    return {dispatch: this.props.dispatch}
-  }
-
-  render() {
-    return (<div>{this.props.children}</div>)
-  }
+function messageContainer(needed) {
+  return compose(
+    connect((state) => ({content: state.content})),
+    withDataProviders(() => [messageProvider(needed)]),
+  )(Message)
 }
-
-export const App = () => (
-  <Provider store={store}>
-    <DispatchProvider dispatch={store.dispatch}>
-      <MessageContainer />
-    </DispatchProvider>
-  </Provider>
-)
