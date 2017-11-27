@@ -2,13 +2,13 @@
 /* eslint-disable no-console */
 import React from 'react'
 import ReactDOM from 'react-dom'
-import {withDataProviders} from './withDataProviders'
+import {withDataProviders} from '../src/withDataProviders'
 import {compose} from 'redux'
 import {connect} from 'react-redux'
 import {newTestApp, getData, delayPromise} from './commonTests'
 
 test('test withDataProviders (needed=true) state change', () => {
-  const root = renderMessageContainer(true)
+  const root = renderMessageContainer({needed: true})
 
   let renderedMessage = root.querySelector('div.message')
   expect(renderedMessage).toBeNull()
@@ -20,7 +20,7 @@ test('test withDataProviders (needed=true) state change', () => {
 })
 
 test('test withDataProviders (needed=false) state change', () => {
-  const root = renderMessageContainer(false)
+  const root = renderMessageContainer({needed: false})
 
   let renderedMessage = root.querySelector('div.message')
   expect(renderedMessage).not.toBeNull()
@@ -37,7 +37,7 @@ test('test withDataProviders (needed=false) state change', () => {
 function renderMessageContainer({needed}) {
   const App = newTestApp()
   const root = document.createElement('div')
-  const MessageContainer = messageContainer(false)
+  const MessageContainer = messageContainer(needed)
   ReactDOM.render(<App><MessageContainer /></App>, root)
   return root
 }
