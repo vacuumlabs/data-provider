@@ -1,6 +1,6 @@
-# Message - Data Providers Usage Example
+# Data Providers Usage Examples
 
-This simple project demonstrates the usage of 2 nested Data Providers and eager pre-fetching of data.
+This simple project provides usage examples of Data Providers, e.g. using 2 nested Data Providers and eager pre-fetching of data.
 
 ## Available Scripts
 
