@@ -1,10 +1,11 @@
 import {messageData} from './actions'
+import Promise from 'bluebird'
 
 // this simple function returns a Promise with given data,
 // with a timed delay - to simulate some real API call
-function getData(data) {
+async function getData(data) {
   data = {...data, body: `${data.body}, getData() called ${++getData.counter} times`}
-  return new Promise((resolve) => setTimeout(resolve, 4 * 1000, data))
+  return await Promise.delay(4 * 1000).then(() => data)
 }
 getData.counter = 0
 
@@ -16,6 +17,5 @@ export const messageProvider = (needed = true) => ({
   ref: 'message',
   getData: [getData, {title: 'Msg Title', body: 'Msg body'}],
   onData: [updateMessage],
-  needed,
-  initialData: null
+  needed
 })
