@@ -38,6 +38,7 @@
     "babel-preset-env": "1",
     "babel-preset-react": "6",
     "babel-preset-stage-0": "6",
+    "bluebird": "^3.5.1",
     "eslint": "4",
     "eslint-config-vacuumlabs": "1",
     "eslint-plugin-import": "2",

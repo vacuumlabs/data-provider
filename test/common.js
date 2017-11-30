@@ -1,17 +1,20 @@
+/* eslint-disable no-console */
 import React from 'react'
 import {createStore} from 'redux'
 import {Provider} from 'react-redux'
 import PropTypes from 'prop-types'
+import {Promise} from 'bluebird'
 
-const GET_DATA_DELAY = 0.1 * 1000
+export const GET_DATA_DELAY = 0.1 * 1000
 
-export function delayPromise() {
-  return new Promise((resolve) => setTimeout(resolve, 2 * GET_DATA_DELAY))
-}
-
-export const getData = (data) => (
-  new Promise((resolve) => setTimeout(resolve, GET_DATA_DELAY, data))
+export const getData = (data, msDelay = GET_DATA_DELAY) => (
+  Promise.delay(msDelay).then(() => data)
 )
+
+export function getDataWithCount({data}, msDelay) {
+  return getData({data: data + ++getDataWithCount.counter}, msDelay)
+}
+getDataWithCount.counter = 0
 
 class DispatchProvider extends React.Component {
   static childContextTypes = {
@@ -32,11 +35,14 @@ export const newTestApp = () => {
     typeof action.reducer === 'function' ? action.reducer(state, action) : state
   ), {content: ''})
 
-  return ({children}) => (
-    <Provider store={store}>
-      <DispatchProvider dispatch={store.dispatch}>
-        {children}
-      </DispatchProvider>
-    </Provider>
-  )
+  return {
+    app: ({children}) => (
+      <Provider store={store}>
+        <DispatchProvider dispatch={store.dispatch}>
+          {children}
+        </DispatchProvider>
+      </Provider>
+    ),
+    store
+  }
 }
