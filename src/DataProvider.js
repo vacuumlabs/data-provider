@@ -1,4 +1,5 @@
 import lo from 'lodash'
+import {cfg} from './config'
 
 export default class DataProvider {
   constructor({id, ref, rawOnData, onData, initialData}) {
@@ -67,7 +68,7 @@ export default class DataProvider {
     }, this.polling())
   }
 
-  fetch() {
+  async fetch() {
     if (this.canceled()) {
       return null
     }
@@ -75,14 +76,23 @@ export default class DataProvider {
       clearTimeout(this.timer)
     }
 
-    return this.getData()
-      .then((data) => {
-        if (!this.canceled()) {
-          this.loaded = true
-          this.onData(data)
-        }
-      }).catch((e) => {
-        console.error(e) // eslint-disable-line no-console
-      }).then(() => this.scheduleNextFetch())
+    let data
+    if (cfg.ignoreGetDataErrors) {
+      try {
+        data = await this.getData()
+      } catch (error) {
+        return Promise.reject()
+      }
+    } else {
+      data = await this.getData()
+    }
+
+    if (!this.canceled()) {
+      this.loaded = true
+      this.onData(data)
+    }
+    this.scheduleNextFetch()
+
+    return Promise.resolve()
   }
 }

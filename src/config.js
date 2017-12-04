@@ -5,7 +5,7 @@ function env(key) {
 }
 
 export const cfg = {
-  env: env('NODE_ENV') || 'development'
+  ignoreGetDataErrors: env('NODE_ENV') === 'production'
 }
 
 /**
@@ -15,7 +15,7 @@ export const cfg = {
 export function dataProvidersConfig(options) {
   options = Object(options)
 
-  if ('env' in options && typeof options.env === 'string') {
-    cfg.env = options.env
+  if ('ignoreGetDataErrors' in options && typeof options.env === 'boolean') {
+    cfg.ignoreGetDataErrors = options.ignoreGetDataErrors
   }
 }
