@@ -15,7 +15,7 @@ export const cfg = {
 export function dataProvidersConfig(options) {
   options = Object(options)
 
-  if ('ignoreGetDataErrors' in options && typeof options.env === 'boolean') {
+  if ('ignoreGetDataErrors' in options && typeof options.ignoreGetDataErrors === 'boolean') {
     cfg.ignoreGetDataErrors = options.ignoreGetDataErrors
   }
 }
