@@ -14,6 +14,8 @@ export default class DataProvider {
       this.loaded = true
       this.onData(initialData)
     }
+    // eslint-disable-next-line no-console
+    console.log(`cfg: ${JSON.stringify(cfg)}`)
   }
 
   updateUser(userId, {polling=Infinity, needed=true, rawGetData, getData}) {

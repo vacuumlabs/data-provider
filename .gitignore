@@ -5,3 +5,4 @@ npm-debug.log
 *.swo
 yarn.lock
 package-lock.json
+build/

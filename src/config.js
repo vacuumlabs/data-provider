@@ -1,6 +1,8 @@
 const hasEnvVariables = typeof process !== 'undefined' && typeof process.env !== 'undefined'
 
 function env(key) {
+  // eslint-disable-next-line no-console
+  console.log(`env() called, process.env['${key}'] = ${process.env[key]}`)
   return hasEnvVariables ? process.env[key] : undefined
 }
 
