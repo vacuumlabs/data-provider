@@ -1,6 +1,6 @@
 {
   "name": "data-provider",
-  "version": "0.0.3",
+  "version": "0.0.5",
   "description": "Library that helps with server-to-client synchronization of data",
   "main": "dist/index.js",
   "scripts": {
@@ -35,8 +35,9 @@
   "devDependencies": {
     "babel-cli": "6",
     "babel-eslint": "7",
-    "babel-preset-node8": "^1.2.0",
+    "babel-preset-env": "1",
     "babel-preset-react": "6",
+    "babel-preset-stage-0": "6",
     "eslint": "4",
     "eslint-config-vacuumlabs": "1",
     "eslint-plugin-import": "2",
