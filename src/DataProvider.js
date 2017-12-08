@@ -68,6 +68,23 @@ export default class DataProvider {
     }, this.polling())
   }
 
+  fetchWithRetry() {
+    return new Promise((resolve, reject) => {
+      const getDataWithRetry = async (retries) => {
+        try {
+          resolve(await this.getData())
+        } catch (error) {
+          if (retries > 0) {
+            setTimeout(() => getDataWithRetry(retries - 1), cfg.retryDelay)
+          } else {
+            reject(error)
+          }
+        }
+      }
+      getDataWithRetry(cfg.maxRetries)
+    })
+  }
+
   async fetch() {
     if (this.canceled()) {
       return null
@@ -76,16 +93,9 @@ export default class DataProvider {
       clearTimeout(this.timer)
     }
 
-    let data
-    if (cfg.ignoreGetDataErrors) {
-      try {
-        data = await this.getData()
-      } catch (error) {
-        return Promise.reject()
-      }
-    } else {
-      data = await this.getData()
-    }
+    const data = cfg.retryOnGetDataError
+      ? await this.fetchWithRetry()
+      : await this.getData()
 
     if (!this.canceled()) {
       this.loaded = true

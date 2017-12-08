@@ -5,7 +5,9 @@ function env(key) {
 }
 
 export const cfg = {
-  ignoreGetDataErrors: env('NODE_ENV') === 'production'
+  retryOnGetDataError: env('NODE_ENV') === 'production',
+  maxRetries: 10,
+  retryDelay: 1000
 }
 
 /**
@@ -15,7 +17,27 @@ export const cfg = {
 export function dataProvidersConfig(options) {
   options = Object(options)
 
-  if ('ignoreGetDataErrors' in options && typeof options.ignoreGetDataErrors === 'boolean') {
-    cfg.ignoreGetDataErrors = options.ignoreGetDataErrors
+  changeCfgOption(options, 'retryOnGetDataError')
+  changeCfgOption(options, 'maxRetries')
+  changeCfgOption(options, 'retryDelay')
+}
+
+// if supplied options contain given field, override its value in global cfg
+function changeCfgOption(options, key) {
+  if (expectKey(options, key, typeof cfg[key])) {
+    cfg[key] = options[key]
   }
+}
+
+// check whether options contain given key and that it is the same type as in cfg
+function expectKey(options, key, type) {
+  if (key in options) {
+    if (typeof options[key] === type) {
+      return true
+    }
+    // eslint-disable-next-line no-console
+    console.warn(`Ignoring options key '${key}' - ` +
+      `expected type '${type}', received '${typeof options[key]}'`)
+  }
+  return false
 }
