@@ -79,7 +79,8 @@ export default class DataProvider {
       clearTimeout(this.timer)
     }
 
-    const response = await cfg.responseHandler()(this.getData)
+    const rawResponse = await this.getData()
+    const response = await cfg.responseHandler(rawResponse)
     let data
     if (response === RETRY) {
       return await this.fetch()

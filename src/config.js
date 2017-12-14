@@ -3,10 +3,8 @@ export const cfg = {
   responseHandler: defaultResponseHandler
 }
 
-function defaultResponseHandler() {
-  return (getData) => {
-    return getData()
-  }
+function defaultResponseHandler(response) {
+  return response
 }
 
 /**
