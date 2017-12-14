@@ -1,13 +1,12 @@
-const hasEnvVariables = typeof process !== 'undefined' && typeof process.env !== 'undefined'
-
-function env(key) {
-  return hasEnvVariables ? process.env[key] : undefined
-}
 
 export const cfg = {
-  retryOnGetDataError: env('NODE_ENV') === 'production',
-  maxRetries: 10,
-  retryDelay: 1000
+  responseHandler: defaultResponseHandler
+}
+
+function defaultResponseHandler() {
+  return (getData) => {
+    return getData()
+  }
 }
 
 /**
@@ -17,9 +16,7 @@ export const cfg = {
 export function dataProvidersConfig(options) {
   options = Object(options)
 
-  changeCfgOption(options, 'retryOnGetDataError')
-  changeCfgOption(options, 'maxRetries')
-  changeCfgOption(options, 'retryDelay')
+  changeCfgOption(options, 'responseHandler')
 }
 
 // if supplied options contain given field, override its value in global cfg

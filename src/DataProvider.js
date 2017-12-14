@@ -1,6 +1,9 @@
 import lo from 'lodash'
 import {cfg} from './config'
 
+export const RETRY = Symbol('RETRY')
+export const ABORT = Symbol('ABORT')
+
 export default class DataProvider {
   constructor({id, ref, rawOnData, onData, initialData}) {
     this.id = id
@@ -68,23 +71,6 @@ export default class DataProvider {
     }, this.polling())
   }
 
-  fetchWithRetry() {
-    return new Promise((resolve, reject) => {
-      const getDataWithRetry = async (retries) => {
-        try {
-          resolve(await this.getData())
-        } catch (error) {
-          if (retries > 0) {
-            setTimeout(() => getDataWithRetry(retries - 1), cfg.retryDelay)
-          } else {
-            reject(error)
-          }
-        }
-      }
-      getDataWithRetry(cfg.maxRetries)
-    })
-  }
-
   async fetch() {
     if (this.canceled()) {
       return null
@@ -93,11 +79,17 @@ export default class DataProvider {
       clearTimeout(this.timer)
     }
 
-    const data = cfg.retryOnGetDataError
-      ? await this.fetchWithRetry()
-      : await this.getData()
+    const response = await cfg.responseHandler()(this.getData)
+    let data
+    if (response === RETRY) {
+      return await this.fetch()
+    } else if (response === ABORT) {
+      data = null
+    } else {
+      data = response
+    }
 
-    if (!this.canceled()) {
+    if (!this.canceled() && data) {
       this.loaded = true
       this.onData(data)
     }
