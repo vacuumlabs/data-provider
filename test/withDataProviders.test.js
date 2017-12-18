@@ -6,39 +6,41 @@ import {compose} from 'redux'
 import {connect} from 'react-redux'
 import {newTestApp, getData, getDataWithCount, GET_DATA_DELAY} from './common'
 
+const origSetTimeout = setTimeout
 jest.useFakeTimers()
 
 beforeEach(() => {
   getDataWithCount.counter = 0
 })
 
-test('withDataProviders (needed=true) renders child component when the data is fetched', () => {
+test('withDataProviders (needed=true) renders child component when the data is fetched', async () => {
   const {root} = renderMessageContainerApp({needed: true})
 
   let renderedMessage = root.querySelector('div.message p')
   expect(renderedMessage).toBeNull()
 
-  jest.runTimersToTime(GET_DATA_DELAY)
+  await runTimersToTime(GET_DATA_DELAY)
+
   renderedMessage = root.querySelector('div.message p')
   expect(renderedMessage).not.toBeNull()
   expect(renderedMessage.textContent).toBe('Hello')
 })
 
-test('withDataProviders (needed=false) renders initial state of child component', () => {
+test('withDataProviders (needed=false) renders initial state of child component', async () => {
   const {root} = renderMessageContainerApp({needed: false, initialData: {data: 'init'}})
 
   let renderedMessage = root.querySelector('div.message p')
   expect(renderedMessage).not.toBeNull()
   expect(renderedMessage.textContent).toBe('init')
 
-  jest.runTimersToTime(GET_DATA_DELAY)
+  await runTimersToTime(GET_DATA_DELAY)
   renderedMessage = root.querySelector('div.message p')
   expect(renderedMessage).not.toBeNull()
   expect(renderedMessage.textContent).toBe('Hello')
 })
 
 test('nested withDataProviders with eager prefetching - child component is rendered ' +
-  'after data is fetched and getData was called only once', () => {
+  'after data is fetched and getData was called only once', async () => {
   const getData = [getDataWithCount, {data: ''}, GET_DATA_DELAY]
   const MessageContainer = messageContainer({needed: true, getData, initialData: {show: false}})
   const ParentContainer = ({show}) => show ? <MessageContainer /> : null
@@ -48,16 +50,16 @@ test('nested withDataProviders with eager prefetching - child component is rende
   )(ParentContainer)
   const {root, store} = renderApp(<Container />)
 
-  jest.runTimersToTime(GET_DATA_DELAY)
+  await runTimersToTime(GET_DATA_DELAY)
   store.dispatch({type: 'toggle-show', reducer: (state) => ({...state, show: !state.show})})
-  jest.runTimersToTime(GET_DATA_DELAY)
+  await runTimersToTime(GET_DATA_DELAY)
 
   let renderedMessage = root.querySelector('div.message')
   expect(renderedMessage).not.toBeNull()
   expect(renderedMessage.textContent).toBe('1')
 })
 
-test('withDataProviders polling', () => {
+test('withDataProviders polling', async () => {
   const POLLING_DELAY = 0.2 * 1000
   const {root} = renderMessageContainerApp({
     polling: POLLING_DELAY,
@@ -70,13 +72,13 @@ test('withDataProviders polling', () => {
   expect(renderedMessage).not.toBeNull()
   expect(renderedMessage.textContent).toBe('init')
 
-  jest.runTimersToTime(POLLING_DELAY)
+  await runTimersToTime(POLLING_DELAY)
   renderedMessage = root.querySelector('div.message p')
   expect(renderedMessage).not.toBeNull()
   expect(renderedMessage.textContent).toMatch(countRegexp)
   const firstCount = parseInt(countRegexp.exec(renderedMessage.textContent)[1], 10)
 
-  jest.runTimersToTime(POLLING_DELAY)
+  await runTimersToTime(POLLING_DELAY)
   renderedMessage = root.querySelector('div.message p')
   expect(renderedMessage).not.toBeNull()
   expect(renderedMessage.textContent).toMatch(countRegexp)
@@ -135,4 +137,9 @@ function messageContainer(dpSettings) {
     connect((state) => ({content: state.content})),
     withDataProviders(() => [messageProvider(dpSettings)]),
   )(Message)
+}
+
+function runTimersToTime(ms) {
+  jest.runTimersToTime(GET_DATA_DELAY)
+  return new Promise((resolve) => origSetTimeout(resolve, 0))
 }
