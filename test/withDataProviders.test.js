@@ -140,6 +140,6 @@ function messageContainer(dpSettings) {
 }
 
 function runTimersToTime(ms) {
-  jest.runTimersToTime(GET_DATA_DELAY)
+  jest.runTimersToTime(ms)
   return new Promise((resolve) => origSetTimeout(resolve, 0))
 }
