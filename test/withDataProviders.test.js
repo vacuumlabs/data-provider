@@ -69,6 +69,23 @@ test('nested withDataProviders with eager prefetching - child component is rende
   expect(renderedMessage.textContent).toBe('1')
 })
 
+test('nested withDataProviders with eager prefetching - child component is rendered immediately, but ' +
+  'getData is called only once', async () => {
+  const getData = [getDataWithCount, {data: ''}, GET_DATA_DELAY]
+  const MessageContainer = messageContainer({needed: true, getData})
+  const ParentContainer = () => (<MessageContainer />)
+  const Container = compose(
+    withDataProviders(() => [messageProvider({needed: false, getData})]),
+  )(ParentContainer)
+  const {root} = renderApp(<Container />)
+
+  await safeDelay(GET_DATA_DELAY)
+
+  let renderedMessage = root.querySelector('div.message')
+  expect(renderedMessage).not.toBeNull()
+  expect(renderedMessage.textContent).toBe('1')
+})
+
 test('withDataProviders polling', async () => {
   const POLLING_DELAY = 0.2 * 1000
   const {root} = renderMessageContainerApp({
