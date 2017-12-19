@@ -1,4 +1,8 @@
 import lo from 'lodash'
+import {cfg} from './config'
+
+export const RETRY = Symbol('RETRY')
+export const ABORT = Symbol('ABORT')
 
 export default class DataProvider {
   constructor({id, ref, rawOnData, onData, initialData}) {
@@ -67,7 +71,7 @@ export default class DataProvider {
     }, this.polling())
   }
 
-  fetch() {
+  async fetch() {
     if (this.canceled()) {
       return null
     }
@@ -75,14 +79,23 @@ export default class DataProvider {
       clearTimeout(this.timer)
     }
 
-    return this.getData()
-      .then((data) => {
-        if (!this.canceled()) {
-          this.loaded = true
-          this.onData(data)
-        }
-      }).catch((e) => {
-        console.error(e) // eslint-disable-line no-console
-      }).then(() => this.scheduleNextFetch())
+    const rawResponse = await this.getData()
+    const response = await cfg.responseHandler(rawResponse)
+    let data
+    if (response === RETRY) {
+      return await this.fetch()
+    } else if (response === ABORT) {
+      data = null
+    } else {
+      data = response
+    }
+
+    if (!this.canceled() && data) {
+      this.loaded = true
+      this.onData(data)
+    }
+    this.scheduleNextFetch()
+
+    return Promise.resolve()
   }
 }
