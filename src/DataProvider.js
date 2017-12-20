@@ -12,6 +12,7 @@ export default class DataProvider {
     this.onData = onData
     this.userConfigs = {}
     this.loaded = false
+    this.fetching = false
 
     if (initialData !== undefined) {
       this.loaded = true
@@ -71,23 +72,34 @@ export default class DataProvider {
     }, this.polling())
   }
 
-  async fetch() {
-    if (this.canceled()) {
+  /**
+   * Fetch calls this.getData() to retrieve data and passes it through resolveHandler and then to this.onData().
+   * If there already is a fetch in-progress and another fetch() is called concurrently,
+   * it will not trigger another getData call, but it will return immediately - UNLESS
+   * force parameter is set to true
+   */
+  async fetch(force = false) {
+    if (this.canceled() || (!force && this.fetching)) {
       return null
     }
+    this.fetching = true
     if (this.timer) {
       clearTimeout(this.timer)
     }
 
-    const rawResponse = await this.getData()
-    const response = await cfg.responseHandler(rawResponse)
     let data
-    if (response === RETRY) {
-      return await this.fetch()
-    } else if (response === ABORT) {
-      data = null
-    } else {
-      data = response
+    try {
+      const rawResponse = await this.getData()
+      const response = await cfg.responseHandler(rawResponse)
+      if (response === RETRY) {
+        return await this.fetch(true)
+      } else if (response === ABORT) {
+        data = null
+      } else {
+        data = response
+      }
+    } finally {
+      this.fetching = false
     }
 
     if (!this.canceled() && data) {

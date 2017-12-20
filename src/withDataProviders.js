@@ -26,7 +26,7 @@ function fetch(dpRef) {
   if (found == null) {
     throw new Error(`No data provider ref=${dpRef}`)
   }
-  return found.fetch()
+  return found.fetch(true)
 }
 
 export function withRefetch() {
@@ -74,8 +74,10 @@ export function withDataProviders(getConfig) {
       componentWillReceiveProps(nextProps) {
         // Make sure context is updated (shouldComponentUpdate of some parent
         // component might prevent it from being updated)
-        this.forceUpdate()
-        this.handleUpdate(nextProps)
+        if (!lo.isEqual(this.props, nextProps)) {
+          this.forceUpdate()
+          this.handleUpdate(nextProps)
+        }
       }
 
       componentWillUnmount() {
