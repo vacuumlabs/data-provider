@@ -62,7 +62,6 @@ test('nested withDataProviders with eager prefetching - child component is rende
 
   await safeDelay(GET_DATA_DELAY)
   store.dispatch({type: 'toggle-show', reducer: (state) => ({...state, show: !state.show})})
-  await safeDelay(GET_DATA_DELAY)
 
   let renderedMessage = root.querySelector('div.message')
   expect(renderedMessage).not.toBeNull()
@@ -73,10 +72,9 @@ test('nested withDataProviders with eager prefetching - child component is rende
   'getData is called only once', async () => {
   const getData = [getDataWithCount, {data: ''}, GET_DATA_DELAY]
   const MessageContainer = messageContainer({needed: true, getData})
-  const ParentContainer = () => (<MessageContainer />)
   const Container = compose(
     withDataProviders(() => [messageProvider({needed: false, getData})]),
-  )(ParentContainer)
+  )(MessageContainer)
   const {root} = renderApp(<Container />)
 
   await safeDelay(GET_DATA_DELAY)
