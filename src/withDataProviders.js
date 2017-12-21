@@ -3,6 +3,7 @@ import React from 'react'
 import lo from 'lodash'
 import DataProvider from './DataProvider'
 import {assert, IdGenerator} from './util'
+import {LoadingIcon} from './LoadingIcon'
 
 function call(list) {
   let fn = list[0]
@@ -172,7 +173,7 @@ export function withDataProviders(getConfig) {
           let dp = dataProviders[id]
           return !dp.userConfigs[this.id].needed || dp.loaded
         })
-        return show ? <Component {...this.props} /> : null
+        return show ? <Component {...this.props} /> : <LoadingIcon />
       }
     }
   }
