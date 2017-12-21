@@ -72,6 +72,23 @@ export default class DataProvider {
     }, this.polling())
   }
 
+  getDataWithRetry() {
+    return new Promise((resolve, reject) => {
+      let lastTimeout
+      let timedGetData = async (retries) => {
+        if (retries <= 0) {
+          reject()
+          return
+        }
+        lastTimeout = setTimeout(timedGetData, cfg.fetchTimeout, retries - 1)
+        let data = await this.getData()
+        clearTimeout(lastTimeout)
+        resolve(data)
+      }
+      timedGetData(cfg.maxTimeoutRetries)
+    })
+  }
+
   /**
    * Fetch calls this.getData() to retrieve data and passes it through resolveHandler and then to this.onData().
    * If there already is a fetch in-progress and another fetch() is called concurrently,
@@ -89,7 +106,7 @@ export default class DataProvider {
 
     let data
     try {
-      const rawResponse = await this.getData()
+      const rawResponse = await this.getDataWithRetry()
       const response = await cfg.responseHandler(rawResponse)
       if (response === RETRY) {
         return await this.fetch(true)
