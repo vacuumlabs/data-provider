@@ -3,7 +3,7 @@ import React from 'react'
 import lo from 'lodash'
 import DataProvider from './DataProvider'
 import {assert, IdGenerator} from './util'
-import {LoadingIcon} from './LoadingIcon'
+import {cfg} from './config'
 
 function call(list) {
   let fn = list[0]
@@ -69,6 +69,7 @@ export function withDataProviders(getConfig) {
       componentWillMount() {
         this.id = idg.next()
         this.dataProviders = {}
+        this.loadingIcon = cfg.loadingIcon
         this.handleUpdate(this.props)
       }
 
@@ -97,8 +98,11 @@ export function withDataProviders(getConfig) {
             onData: rawOnData,
             initialData,
             polling,
-            needed
+            needed,
+            loadingIcon
           } = dpConfig
+
+          this.loadingIcon = loadingIcon === undefined ? this.loadingIcon : loadingIcon
 
           // Look for data provider with this ref among data providers of this
           // component and data providers of its DOM ancestors
@@ -173,7 +177,7 @@ export function withDataProviders(getConfig) {
           let dp = dataProviders[id]
           return !dp.userConfigs[this.id].needed || dp.loaded
         })
-        return show ? <Component {...this.props} /> : <LoadingIcon />
+        return show ? <Component {...this.props} /> : this.loadingIcon
       }
     }
   }

@@ -1,6 +1,9 @@
+import React from 'react'
+import {LoadingIcon} from './LoadingIcon'
 
 export const cfg = {
-  responseHandler: defaultResponseHandler
+  responseHandler: defaultResponseHandler,
+  loadingIcon: <LoadingIcon />
 }
 
 function defaultResponseHandler(response) {
@@ -15,6 +18,7 @@ export function dataProvidersConfig(options) {
   options = Object(options)
 
   changeCfgOption(options, 'responseHandler')
+  changeCfgOption(options, 'loadingIcon')
 }
 
 // if supplied options contain given field, override its value in global cfg
