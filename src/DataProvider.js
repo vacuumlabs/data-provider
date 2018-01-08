@@ -76,7 +76,7 @@ export default class DataProvider {
     return new Promise((resolve, reject) => {
       let lastTimeout
       let timedGetData = async (retries) => {
-        if (retries <= 0) {
+        if (retries < 0) {
           reject()
           return
         }
