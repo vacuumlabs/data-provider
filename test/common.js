@@ -15,8 +15,7 @@ export const getData = (data, msDelay = GET_DATA_DELAY) => (
 )
 
 export function getDataWithCount({data}, msDelay) {
-  let delay = msDelay instanceof Array ? msDelay[getDataWithCount.counter] : msDelay
-  return getData({data: data + ++getDataWithCount.counter}, delay)
+  return getData({data: data + ++getDataWithCount.counter}, msDelay)
 }
 getDataWithCount.counter = 0
 

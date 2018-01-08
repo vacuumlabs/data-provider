@@ -151,8 +151,9 @@ test('DataProvider retries on getData timeout and accepts first returned getData
   dataProvidersConfig({fetchTimeout: TIMEOUT})
   // 3rd getData call returns the result first, therefore we'll expect the message to contain 'count:3'
   const progressiveDelays = [TIMEOUT * 5, TIMEOUT * 4, TIMEOUT * 1.5, TIMEOUT * 2]
+  const timeoutingGetData = (data) => getDataWithCount(data, progressiveDelays[getDataWithCount.counter])
   const {root} = renderMessageContainerApp({
-    getData: [getDataWithCount, {data: 'count:'}, progressiveDelays]
+    getData: [timeoutingGetData, {data: 'count:'}]
   })
 
   await safeDelay(TIMEOUT * 5)
