@@ -36,14 +36,14 @@ const ParentMessageContainer = compose(
   connect((state) => ({showMessage: state.showMessage}))
 )(ToggleableMessageContainer)
 
-const AppContainer = ({showMessage, toggleMessage}) => (
+const NestedProvidersContainer = ({showMessage, toggleMessage}) => (
   <div className="App">
     <button onClick={toggleMessage}>{showMessage ? 'Hide' : 'Show'}</button>
     <ParentMessageContainer />
   </div>
 )
 
-export const App = connect(
+export const NestedProviders = connect(
   ({showMessage}) => ({showMessage}),
   {toggleMessage}
-)(AppContainer)
+)(NestedProvidersContainer)
