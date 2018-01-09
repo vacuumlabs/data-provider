@@ -3,7 +3,9 @@ import {LoadingIcon} from './LoadingIcon'
 
 export const cfg = {
   responseHandler: defaultResponseHandler,
-  loadingIcon: <LoadingIcon />
+  loadingIcon: <LoadingIcon />,
+  fetchTimeout: 30 * 1000,
+  maxTimeoutRetries: 5
 }
 
 function defaultResponseHandler(response) {
@@ -17,8 +19,7 @@ function defaultResponseHandler(response) {
 export function dataProvidersConfig(options) {
   options = Object(options)
 
-  changeCfgOption(options, 'responseHandler')
-  changeCfgOption(options, 'loadingIcon')
+  Object.keys(cfg).forEach((key) => changeCfgOption(options, key))
 }
 
 // if supplied options contain given field, override its value in global cfg

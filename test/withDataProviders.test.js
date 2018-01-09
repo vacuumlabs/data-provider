@@ -8,11 +8,11 @@ import {compose} from 'redux'
 import {connect} from 'react-redux'
 import {newTestApp, getData, getDataWithCount, safeDelay, GET_DATA_DELAY} from './common'
 
-const origResponseHandler = cfg.responseHandler
+const origCfg = {...cfg}
 
 beforeEach(() => {
   getDataWithCount.counter = 0
-  dataProvidersConfig({responseHandler: origResponseHandler})
+  dataProvidersConfig(origCfg)
 })
 
 let lastRoot = null
@@ -144,6 +144,23 @@ test('DataProvider aborts after receiving ABORT from responseHandler', async () 
   let renderedMessage = root.querySelector('div.message p')
   expect(renderedMessage).not.toBeNull()
   expect(renderedMessage.textContent).toBe('')
+})
+
+test('DataProvider retries on getData timeout and accepts first returned getData result', async () => {
+  const TIMEOUT = 100
+  dataProvidersConfig({fetchTimeout: TIMEOUT})
+  // 3rd getData call returns the result first, therefore we'll expect the message to contain 'count:3'
+  const progressiveDelays = [TIMEOUT * 5, TIMEOUT * 4, TIMEOUT * 1.5, TIMEOUT * 2]
+  const timeoutingGetData = (data) => getDataWithCount(data, progressiveDelays[getDataWithCount.counter])
+  const {root} = renderMessageContainerApp({
+    getData: [timeoutingGetData, {data: 'count:'}]
+  })
+
+  await safeDelay(TIMEOUT * 5)
+  let renderedMessage = root.querySelector('div.message p')
+  expect(renderedMessage).not.toBeNull()
+  expect(renderedMessage.textContent).toBe('count:3')
+  expect(getDataWithCount.counter).toBe(4)
 })
 
 // common functions, components
