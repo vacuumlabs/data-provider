@@ -1,21 +1,32 @@
-import {messageData} from './actions'
-import Promise from 'bluebird'
+import {postData, messageData} from './actions'
+import {getData, getDataWithCount} from './getData'
 
-// this simple function returns a Promise with given data,
-// with a timed delay - to simulate some real API call
-async function getData(data) {
-  data = {...data, body: `${data.body}, getData() called ${++getData.counter} times`}
-  return await Promise.delay(4 * 1000).then(() => data)
+const updatePost = () => (ref, data, dispatch) => {
+  dispatch(postData(data, ref))
 }
-getData.counter = 0
+
+export const postProvider = (needed = true) => ({
+  ref: 'post-provider',
+  getData: [getDataWithCount, {title: 'Msg Title', body: 'Msg body'}],
+  onData: [updatePost],
+  needed
+})
 
 const updateMessage = () => (ref, data, dispatch) => {
   dispatch(messageData(data, ref))
 }
 
-export const messageProvider = (needed = true) => ({
+export const messageProvider = () => ({
   ref: 'message',
-  getData: [getData, {title: 'Msg Title', body: 'Msg body'}],
+  getData: [getData, {body: 'Hello world'}],
   onData: [updateMessage],
-  needed
+  needed: true
+})
+
+export const pollingProvider = () => ({
+  ref: 'polling',
+  getData: [getDataWithCount, {body: 'This message refreshes every 4 seconds'}, 2000],
+  onData: [updateMessage],
+  needed: true,
+  polling: 2000
 })

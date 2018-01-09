@@ -5,7 +5,7 @@ import './index.css'
 import PropTypes from 'prop-types'
 import {Provider} from 'react-redux'
 import configureStore from './configureStore'
-import {App} from './Main'
+import {App} from './App'
 
 const store = configureStore()
 
