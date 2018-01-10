@@ -3,6 +3,7 @@ import {withDataProviders} from 'data-provider'
 import {connect} from 'react-redux'
 import {compose} from 'redux'
 import {messageProvider} from './dataProviders'
+import {defaultOnMount} from './onWillMount'
 
 const Message = ({body}) => (
   <div className="message">
@@ -15,8 +16,9 @@ const MessageContainer = compose(
   connect((state) => ({body: state.body}))
 )(Message)
 
-export const SingleDataProviderExample = () => (
+const SingleDataProviderContainer = () => (
   <div className="box-container">
     <MessageContainer />
   </div>
 )
+export const SingleDataProviderExample = defaultOnMount()(SingleDataProviderContainer)

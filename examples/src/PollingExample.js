@@ -3,6 +3,7 @@ import {withDataProviders} from 'data-provider'
 import {connect} from 'react-redux'
 import {compose} from 'redux'
 import {pollingProvider} from './dataProviders'
+import {defaultOnMount} from './onWillMount'
 
 const Message = ({body}) => (
   <div className="message">
@@ -15,8 +16,10 @@ const MessageContainer = compose(
   connect((state) => ({body: state.body}))
 )(Message)
 
-export const PollingExample = () => (
+const PollingContainer = () => (
   <div className="box-container">
     <MessageContainer />
   </div>
 )
+
+export const PollingExample = defaultOnMount()(PollingContainer)

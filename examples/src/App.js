@@ -1,11 +1,9 @@
 import React from 'react'
-import {connect} from 'react-redux'
 import {BrowserRouter as Router, Route, NavLink, Switch} from 'react-router-dom'
 import {NestedProvidersExample} from './NestedProvidersExample'
 import {SingleDataProviderExample} from './SingleProviderExample'
 import {PollingExample} from './PollingExample'
-import {resetGetDataCounter} from './getData'
-import {resetState} from './actions'
+import {ResponseHandlerExample} from './ResponseHandlerExample'
 
 const Home = () => (<div><p>Choose an example</p></div>)
 
@@ -22,24 +20,21 @@ const exampleRoutes = [
     component: PollingExample,
     title: 'Polling'
   },
+  {path: '/responseHandler',
+    component: ResponseHandlerExample,
+    title: 'Response Handler'
+  }
 ]
 
-const NavigationLinks = ({resetAll}) => (
+const Navigation = () => (
   <ul className="nav">
     <li><NavLink exact to="/">Home</NavLink></li>
 
     {exampleRoutes.map((route, index) => (
-      <li key={index}><NavLink to={route.path} onClick={resetAll}>{route.title}</NavLink></li>
+      <li key={index}><NavLink to={route.path}>{route.title}</NavLink></li>
     ))}
   </ul>
 )
-
-const Navigation = connect(null, (dispatch) => ({
-  resetAll: () => {
-    resetGetDataCounter()
-    dispatch(resetState())
-  }
-}), null, {pure: false})(NavigationLinks)
 
 export const App = () => (
   <Router>

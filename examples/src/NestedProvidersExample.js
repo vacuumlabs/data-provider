@@ -4,6 +4,7 @@ import {connect} from 'react-redux'
 import {compose} from 'redux'
 import {postProvider} from './dataProviders'
 import {togglePost} from './actions'
+import {defaultOnMount} from './onWillMount'
 
 const Post = ({title, body}) => (
   <div className="message">
@@ -43,7 +44,10 @@ const NestedProvidersContainer = ({showPost, togglePost}) => (
   </div>
 )
 
-export const NestedProvidersExample = connect(
-  ({showPost}) => ({showPost}),
-  {togglePost}
+export const NestedProvidersExample = compose(
+  connect(
+    ({showPost}) => ({showPost}),
+    {togglePost}
+  ),
+  defaultOnMount()
 )(NestedProvidersContainer)

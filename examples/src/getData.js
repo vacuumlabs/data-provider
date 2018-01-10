@@ -14,6 +14,15 @@ export function getDataWithCount(data, msDelay) {
 }
 getDataWithCount.counter = 0
 
+export function failingGetDataWithResponse(data, msDelay) {
+  return getDataWithCount(data, msDelay).then((retData) => {
+    let json = JSON.stringify(retData)
+    return new Response(json, {status: failingGetDataWithResponse.failCount++ < 3 ? 503 : 200})
+  })
+}
+failingGetDataWithResponse.failCount = 0
+
 export function resetGetDataCounter() {
   getDataWithCount.counter = 0
+  failingGetDataWithResponse.failCount = 0
 }

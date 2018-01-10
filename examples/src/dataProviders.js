@@ -1,5 +1,5 @@
 import {postData, messageData} from './actions'
-import {getData, getDataWithCount} from './getData'
+import {failingGetDataWithResponse, getData, getDataWithCount} from './getData'
 
 const updatePost = () => (ref, data, dispatch) => {
   dispatch(postData(data, ref))
@@ -29,4 +29,11 @@ export const pollingProvider = () => ({
   onData: [updateMessage],
   needed: true,
   polling: 2000
+})
+
+export const failingResponseHandlerProvider = () => ({
+  ref: 'resp',
+  getData: [failingGetDataWithResponse, {body: 'Hello world'}, 2000],
+  onData: [updateMessage],
+  needed: true
 })
