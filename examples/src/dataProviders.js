@@ -37,3 +37,10 @@ export const failingResponseHandlerProvider = () => ({
   onData: [updateMessage],
   needed: true
 })
+
+export const refetchProvider = () => ({
+  ref: 'refetch',
+  getData: [getDataWithCount, {body: 'Hello world'}, 2000],
+  onData: [updateMessage],
+  needed: true
+})
