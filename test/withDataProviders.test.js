@@ -1,7 +1,8 @@
 /* global test, expect, beforeEach, afterEach */
 import React from 'react'
 import ReactDOM from 'react-dom'
-import {withDataProviders} from '../src/withDataProviders'
+import ReactTestUtils from 'react-dom/test-utils'
+import {withDataProviders, withRefetch} from '../src/withDataProviders'
 import {dataProvidersConfig, cfg} from '../src/config'
 import {ABORT} from '../src/DataProvider'
 import {compose} from 'redux'
@@ -175,6 +176,42 @@ test('component with keep-alive retains data after unmounting / mounting', async
   expectTextContent(renderedMessage).toBe('2')
 })
 
+test('component with refetch works after unmounting/mounting', async () => {
+  const getData = [getDataWithCount, {data: ''}, GET_DATA_DELAY]
+  const RefetchContainer = ({refetch, content}) => (
+    <div>
+      <Message content={content} />
+      <button onClick={() => refetch('refetch')} />
+    </div>
+  )
+  const MessageContainer = compose(
+    withRefetch(),
+    withDataProviders(() => [messageProvider({ref: 'refetch', getData})]),
+    connect((state) => ({content: state.content})),
+  )(RefetchContainer)
+  const ShowContainer = ({show}) => (
+    <div>
+      {show ? <MessageContainer /> : null}
+    </div>
+  )
+  const Container = connect((state) => ({show: state.show}))(ShowContainer)
+  const {root, store} = renderApp(<Container />, {show: true})
+  const toggleShowAction = {type: 'toggle-show', reducer: (state) => ({...state, show: !state.show})}
+
+  // turn off show to unmount MessageContainer
+  store.dispatch(toggleShowAction)
+
+  // and turn on show to mount it again
+  store.dispatch(toggleShowAction)
+  await safeDelay(0)
+  ReactTestUtils.Simulate.click(root.querySelector('button'))
+  await safeDelay(GET_DATA_DELAY)
+
+  let renderedMessage = root.querySelector('div.message')
+  expect(renderedMessage).not.toBeNull()
+  expect(renderedMessage.textContent).toBe('3') // 1st init call, 2nd on remount, 3rd on refetch
+})
+
 // common functions, components
 
 function renderMessageContainerApp(dpSettings) {
@@ -182,8 +219,8 @@ function renderMessageContainerApp(dpSettings) {
   return renderApp(<MessageContainer />)
 }
 
-function renderApp(content) {
-  const {app: App, store} = newTestApp()
+function renderApp(content, initialState) {
+  const {app: App, store} = newTestApp(initialState)
   const root = document.createElement('div')
   lastRoot = root
   ReactDOM.render(<App>{content}</App>, root)
