@@ -6,6 +6,8 @@ import {postProvider} from './dataProviders'
 import {togglePost} from './actions'
 import {defaultOnMount} from './onWillMount'
 
+const EXAMPLE_ID = 'exampleNP'
+
 const Post = ({title, body}) => (
   <div className="message">
     <h3>{title}</h3>
@@ -18,8 +20,8 @@ const Post = ({title, body}) => (
 // and dispatched by parent DP, this connect component needs to react to state change - it wouldn't be able to,
 // if it was "under" this DP, because it didn't exist yet
 const PostContainer = compose(
-  connect((state) => ({title: state.title, body: state.body})),
-  withDataProviders(() => [postProvider(true)]),
+  connect((state) => (state[EXAMPLE_ID])),
+  withDataProviders(() => [postProvider(true, EXAMPLE_ID)]),
 )(Post)
 
 const ToggleablePostContainer = ({showPost}) => (
@@ -31,22 +33,24 @@ const ToggleablePostContainer = ({showPost}) => (
   </div>
 )
 
+const connectShowPostFromState = (state) => ({showPost: state[EXAMPLE_ID] ? state[EXAMPLE_ID].showPost : false})
+
 // ParentPostContainer uses a data-provider with needed === false
 const ParentPostContainer = compose(
-  withDataProviders(() => [postProvider(false)]),
-  connect((state) => ({showPost: state.showPost}))
+  withDataProviders(() => [postProvider(false, EXAMPLE_ID)]),
+  connect(connectShowPostFromState)
 )(ToggleablePostContainer)
 
 const NestedProvidersContainer = ({showPost, togglePost}) => (
   <div>
-    <button onClick={togglePost}>{showPost ? 'Hide' : 'Show'}</button>
+    <button onClick={() => togglePost(EXAMPLE_ID)}>{showPost ? 'Hide' : 'Show'}</button>
     <ParentPostContainer />
   </div>
 )
 
 export const NestedProvidersExample = compose(
   connect(
-    ({showPost}) => ({showPost}),
+    connectShowPostFromState,
     {togglePost}
   ),
   defaultOnMount()

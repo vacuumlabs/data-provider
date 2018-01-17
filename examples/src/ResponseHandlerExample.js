@@ -5,6 +5,8 @@ import {compose} from 'redux'
 import {failingResponseHandlerProvider} from './dataProviders'
 import {defaultOnMount} from './onWillMount'
 
+const EXAMPLE_ID = 'exampleRH'
+
 const retryOn503ResponseHandler = (response) => {
   console.log(`received response with status: ${response.status}`) //eslint-disable-line no-console
   if (response.ok) {
@@ -25,8 +27,8 @@ const Message = ({body}) => (
 )
 
 const MessageContainer = compose(
-  withDataProviders(() => [failingResponseHandlerProvider()]),
-  connect((state) => ({body: state.body}))
+  withDataProviders(() => [failingResponseHandlerProvider(EXAMPLE_ID)]),
+  connect((state) => (state[EXAMPLE_ID]))
 )(Message)
 
 const ResponseHandlerContainer = () => (

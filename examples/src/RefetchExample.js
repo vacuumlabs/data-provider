@@ -5,6 +5,8 @@ import {compose} from 'redux'
 import {refetchProvider} from './dataProviders'
 import {defaultOnMount} from './onWillMount'
 
+const EXAMPLE_ID = 'exampleRefetch'
+
 const Message = ({body, refetch}) => (
   <div className="message">
     <h3>{body}</h3>
@@ -14,8 +16,8 @@ const Message = ({body, refetch}) => (
 
 const MessageContainer = compose(
   withRefetch(),
-  withDataProviders(() => [refetchProvider()]),
-  connect((state) => ({body: state.body}))
+  withDataProviders(() => [refetchProvider(EXAMPLE_ID)]),
+  connect((state) => (state[EXAMPLE_ID]))
 )(Message)
 
 const RefetchExampleContainer = () => (

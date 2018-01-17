@@ -6,6 +6,7 @@
     "babel-polyfill": "^6.26.0",
     "bluebird": "^3.5.1",
     "data-provider": "file:../",
+    "immutability-helper": "^2.6.4",
     "prop-types": "^15.6.0",
     "react": "^16.1.1",
     "react-dom": "^16.1.1",

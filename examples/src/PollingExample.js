@@ -5,6 +5,8 @@ import {compose} from 'redux'
 import {pollingProvider} from './dataProviders'
 import {defaultOnMount} from './onWillMount'
 
+const EXAMPLE_ID = 'examplePolling'
+
 const Message = ({body}) => (
   <div className="message">
     <h3>{body}</h3>
@@ -12,8 +14,8 @@ const Message = ({body}) => (
 )
 
 const MessageContainer = compose(
-  withDataProviders(() => [pollingProvider()]),
-  connect((state) => ({body: state.body}))
+  withDataProviders(() => [pollingProvider(EXAMPLE_ID)]),
+  connect((state) => (state[EXAMPLE_ID]))
 )(Message)
 
 const PollingContainer = () => (
