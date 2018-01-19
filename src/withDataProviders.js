@@ -13,6 +13,35 @@ function call(list) {
 
 const idg = new IdGenerator()
 const dataProviders = {}
+const dpMap = new Map()
+function findDp(ref, rawOnData, rawGetData) {
+  let dps = dpMap.get(ref)
+  if (dps) {
+    for (let [dpId, dp] of dps.entries()) {
+      if (dp && lo.isEqual(dp.rawOnData, rawOnData) && lo.isEqual(dp.rawGetData, rawGetData)) {
+        if (dp.isExpired()) {
+          dps.delete(dpId)
+          delete dataProviders[dpId]
+        } else {
+          return dp.id
+        }
+      }
+    }
+  }
+  return null
+}
+
+function removeUser(dpId, userId) {
+  let dp = dataProviders[dpId]
+  if (dp.keepAliveFor) {
+    dp.disableUser(userId)
+  } else {
+    dp.removeUser(userId)
+    if (lo.isEmpty(dp.userConfigs)) {
+      delete dataProviders[dpId]
+    }
+  }
+}
 
 function fetch(dpRef) {
   let found = null
@@ -71,6 +100,7 @@ export function withDataProviders(getConfig) {
         this.dataProviders = {}
         this.loadingIcon = cfg.loadingIcon
         this.handleUpdate(this.props)
+        this.mounted = true
       }
 
       componentWillReceiveProps(nextProps) {
@@ -84,7 +114,14 @@ export function withDataProviders(getConfig) {
 
       componentWillUnmount() {
         for (let dpId in this.dataProviders) {
-          dataProviders[dpId].removeUser(this.id)
+          removeUser(dpId, this.id)
+        }
+        this.mounted = false
+      }
+
+      updateMountedComponent() {
+        if (this.mounted) {
+          this.forceUpdate()
         }
       }
 
@@ -100,8 +137,11 @@ export function withDataProviders(getConfig) {
             polling,
             needed,
             loadingIcon,
-            responseHandler = cfg.responseHandler
+            responseHandler = cfg.responseHandler,
+            keepAliveFor = 0
           } = dpConfig
+          assert(Number.isInteger(keepAliveFor) && keepAliveFor >= 0,
+            'Parameter keepAliveFor must be a positive Integer or 0')
 
           this.loadingIcon = loadingIcon === undefined ? this.loadingIcon : loadingIcon
 
@@ -111,8 +151,9 @@ export function withDataProviders(getConfig) {
             {...this.context.dataProviders, ...this.dataProviders},
             (dpRef) => lo.isEqual(dpRef, ref))
 
-          let dp
-
+          if (dpId == null && keepAliveFor) {
+            dpId = findDp(ref, rawOnData, rawGetData)
+          }
           if (dpId == null) {
             assert(rawOnData != null && rawGetData != null,
               'Parameters onData, getData have to be provided, if data' +
@@ -126,14 +167,22 @@ export function withDataProviders(getConfig) {
               rawOnData,
               onData: (data) => {
                 call(rawOnData)(ref, data, this.context.dispatch)
-                this.forceUpdate()
+                this.updateMountedComponent()
               },
               initialData,
-              responseHandler
+              responseHandler,
+              keepAliveFor
             })
+            if (keepAliveFor) {
+              if (dpMap.has(ref)) {
+                dpMap.get(ref).set(dpId, dataProviders[dpId])
+              } else {
+                dpMap.set(ref, new Map([[dpId, dataProviders[dpId]]]))
+              }
+            }
           }
 
-          dp = dataProviders[dpId]
+          let dp = dataProviders[dpId]
 
           // Changing onData for existing data provider is not currently
           // supported
@@ -163,9 +212,11 @@ export function withDataProviders(getConfig) {
           newDataProviders[dpId] = dp.ref
         }
 
+        // this is used when handleUpdate is called for existing component, but with new props,
+        // so its data providers could've changed
         for (let dpId in this.dataProviders) {
           if (!lo.has(newDataProviders, dpId)) {
-            dataProviders[dpId].removeUser(this.id)
+            removeUser(dpId, this.id)
           }
         }
 
@@ -177,7 +228,7 @@ export function withDataProviders(getConfig) {
       render() {
         let show = lo.keys(this.dataProviders).every((id) => {
           let dp = dataProviders[id]
-          return !dp.userConfigs[this.id].needed || dp.loaded
+          return !dp.userConfigs.get(this.id).needed || dp.loaded
         })
         return show ? <Component {...this.props} /> : this.loadingIcon
       }

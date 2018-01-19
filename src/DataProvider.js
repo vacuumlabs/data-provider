@@ -6,15 +6,17 @@ const RETRY = Symbol('RETRY')
 export const ABORT = Symbol('ABORT')
 
 export default class DataProvider {
-  constructor({id, ref, rawOnData, onData, initialData, responseHandler}) {
+  constructor({id, ref, rawOnData, onData, initialData, responseHandler, keepAliveFor = false}) {
     this.id = id
     this.ref = ref
     this.rawOnData = rawOnData
     this.onData = onData
-    this.userConfigs = {}
+    this.userConfigs = new Map()
     this.loaded = false
     this.fetching = false
     this.responseHandler = responseHandler
+    this.keepAliveFor = keepAliveFor
+    this.expiresAt = null
 
     if (initialData !== undefined) {
       this.loaded = true
@@ -24,6 +26,7 @@ export default class DataProvider {
 
   updateUser(userId, {polling=Infinity, needed=true, rawGetData, getData}) {
     let needFetch = false
+    this.expiresAt = null
 
     if (rawGetData != null && !lo.isEqual(rawGetData, this.rawGetData)) {
       needFetch = true
@@ -33,7 +36,12 @@ export default class DataProvider {
     }
 
     let oldPolling = this.polling()
-    this.userConfigs[userId] = {polling, needed}
+    for (let [uId, cfg] of this.userConfigs.entries()) {
+      if (cfg.polling === polling && cfg.needed === needed && !cfg.enabled) {
+        this.userConfigs.delete(uId)
+      }
+    }
+    this.userConfigs.set(userId, {polling, needed, enabled: true})
 
     if (this.polling() < oldPolling) {
       needFetch = true
@@ -49,19 +57,32 @@ export default class DataProvider {
   }
 
   removeUser(userId) {
-    delete this.userConfigs[userId]
+    this.userConfigs.delete(userId)
+  }
+
+  disableUser(userId) {
+    this.userConfigs.get(userId).enabled = false
+    const allUsersDisabled = [...this.userConfigs.values()].every((v) => !v.enabled)
+    if (this.keepAliveFor && allUsersDisabled) {
+      this.expiresAt = new Date().getTime() + this.keepAliveFor
+    }
   }
 
   polling() {
-    return lo.min([...lo.values(this.userConfigs).map(({polling}) => polling), Infinity])
+    return [...this.userConfigs.values()].reduce((prev, {polling}) => Math.min(polling, prev), Infinity)
   }
 
   needed() {
-    return lo.reduce(lo.values(this.userConfigs).map(({needed}) => needed), (v1, v2) => v1 || v2, false)
+    return [...this.userConfigs.values()].reduce((prev, {needed}) => prev || needed, false)
+  }
+
+  isExpired() {
+    return this.expiresAt && this.expiresAt < new Date().getTime()
   }
 
   canceled() {
-    return lo.isEmpty(this.userConfigs)
+    return this.keepAliveFor <= 0 && lo.isEmpty(this.userConfigs)
+      || this.isExpired()
   }
 
   scheduleNextFetch() {
