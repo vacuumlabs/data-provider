@@ -4,6 +4,7 @@ import {NestedProvidersExample} from './NestedProvidersExample'
 import {SingleDataProviderExample} from './SingleProviderExample'
 import {PollingExample} from './PollingExample'
 import {RefetchExample} from './RefetchExample'
+import {PollingKeepAliveExample} from './PollingKeepAliveExample'
 
 const Home = () => (<div><p>Choose an example</p></div>)
 
@@ -27,7 +28,12 @@ const exampleRoutes = [
     path: '/refetch',
     component: RefetchExample,
     title: 'Refetch'
-  }
+  },
+  {
+    path: '/pollingKeepAlive',
+    component: PollingKeepAliveExample,
+    title: 'Polling With Keep Alive'
+  },
 ]
 
 const Navigation = () => (

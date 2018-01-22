@@ -7,7 +7,7 @@ const updatePost = (exampleId) => (ref, data, dispatch) => {
 
 export const postProvider = (needed = true, exampleId) => ({
   ref: 'post-provider',
-  getData: [getDataWithCount, {title: 'Msg Title', body: 'Msg body'}],
+  getData: [getDataWithCount, {title: 'Msg Title', body: 'Msg body'}, exampleId],
   onData: [updatePost, exampleId],
   needed
 })
@@ -23,24 +23,25 @@ export const messageProvider = (exampleId) => ({
   needed: true
 })
 
-export const pollingProvider = (exampleId) => ({
+export const pollingProvider = (exampleId, opts) => ({
   ref: 'polling',
-  getData: [getDataWithCount, {body: 'This message refreshes every 4 seconds'}, 2000],
+  getData: [getDataWithCount, {body: 'This message refreshes every 4 seconds'}, exampleId, 2000],
   onData: [updateMessage, exampleId],
   needed: true,
-  polling: 2000
+  polling: 2000,
+  ...opts
 })
 
 export const failingResponseHandlerProvider = (exampleId) => ({
   ref: 'resp',
-  getData: [failingGetDataWithResponse, {body: 'Hello world'}, 2000],
+  getData: [failingGetDataWithResponse, {body: 'Hello world'}, exampleId, 2000],
   onData: [updateMessage, exampleId],
   needed: true
 })
 
 export const refetchProvider = (exampleId) => ({
   ref: 'refetch',
-  getData: [getDataWithCount, {body: 'Hello world'}, 2000],
+  getData: [getDataWithCount, {body: 'Hello world'}, exampleId, 2000],
   onData: [updateMessage, exampleId],
   needed: true
 })
