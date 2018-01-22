@@ -32,21 +32,18 @@ test('withDataProviders (needed=true) renders child component when the data is f
   await safeDelay(GET_DATA_DELAY)
 
   renderedMessage = root.querySelector('div.message p')
-  expect(renderedMessage).not.toBeNull()
-  expect(renderedMessage.textContent).toBe('Hello')
+  expectTextContent(renderedMessage).toBe('Hello')
 })
 
 test('withDataProviders (needed=false) renders initial state of child component', async () => {
   const {root} = renderMessageContainerApp({needed: false, initialData: {data: 'init'}})
 
   let renderedMessage = root.querySelector('div.message p')
-  expect(renderedMessage).not.toBeNull()
-  expect(renderedMessage.textContent).toBe('init')
+  expectTextContent(renderedMessage).toBe('init')
 
   await safeDelay(GET_DATA_DELAY)
   renderedMessage = root.querySelector('div.message p')
-  expect(renderedMessage).not.toBeNull()
-  expect(renderedMessage.textContent).toBe('Hello')
+  expectTextContent(renderedMessage).toBe('Hello')
 })
 
 test('nested withDataProviders with eager prefetching - child component is rendered ' +
@@ -64,8 +61,7 @@ test('nested withDataProviders with eager prefetching - child component is rende
   store.dispatch({type: 'toggle-show', reducer: (state) => ({...state, show: !state.show})})
 
   let renderedMessage = root.querySelector('div.message')
-  expect(renderedMessage).not.toBeNull()
-  expect(renderedMessage.textContent).toBe('1')
+  expectTextContent(renderedMessage).toBe('1')
 })
 
 test('nested withDataProviders with eager prefetching - child component is rendered immediately, but ' +
@@ -80,8 +76,7 @@ test('nested withDataProviders with eager prefetching - child component is rende
   await safeDelay(GET_DATA_DELAY)
 
   let renderedMessage = root.querySelector('div.message')
-  expect(renderedMessage).not.toBeNull()
-  expect(renderedMessage.textContent).toBe('1')
+  expectTextContent(renderedMessage).toBe('1')
 })
 
 test('withDataProviders polling', async () => {
@@ -94,19 +89,16 @@ test('withDataProviders polling', async () => {
   const countRegexp = /^count:(\d+)$/
 
   let renderedMessage = root.querySelector('div.message p')
-  expect(renderedMessage).not.toBeNull()
-  expect(renderedMessage.textContent).toBe('init')
+  expectTextContent(renderedMessage).toBe('init')
 
   await safeDelay(POLLING_DELAY)
   renderedMessage = root.querySelector('div.message p')
-  expect(renderedMessage).not.toBeNull()
-  expect(renderedMessage.textContent).toMatch(countRegexp)
+  expectTextContent(renderedMessage).toMatch(countRegexp)
   const firstCount = parseInt(countRegexp.exec(renderedMessage.textContent)[1], 10)
 
   await safeDelay(POLLING_DELAY)
   renderedMessage = root.querySelector('div.message p')
-  expect(renderedMessage).not.toBeNull()
-  expect(renderedMessage.textContent).toMatch(countRegexp)
+  expectTextContent(renderedMessage).toMatch(countRegexp)
   const secondCount = parseInt(countRegexp.exec(renderedMessage.textContent)[1], 10)
   expect(secondCount).toBe(firstCount + 1)
 })
@@ -121,8 +113,7 @@ test('DataProvider aborts after receiving ABORT from responseHandler', async () 
   await safeDelay(GET_DATA_DELAY * 2)
 
   let renderedMessage = root.querySelector('div.message p')
-  expect(renderedMessage).not.toBeNull()
-  expect(renderedMessage.textContent).toBe('')
+  expectTextContent(renderedMessage).toBe('')
 })
 
 test('DataProvider retries on getData timeout and accepts first returned getData result', async () => {
@@ -137,9 +128,51 @@ test('DataProvider retries on getData timeout and accepts first returned getData
 
   await safeDelay(TIMEOUT * 5)
   let renderedMessage = root.querySelector('div.message p')
-  expect(renderedMessage).not.toBeNull()
-  expect(renderedMessage.textContent).toBe('count:3')
+  expectTextContent(renderedMessage).toBe('count:3')
   expect(getDataWithCount.counter).toBe(4)
+})
+
+test('component with keep-alive retains data after unmounting / mounting', async () => {
+  const getData = [getDataWithCount, {data: ''}, GET_DATA_DELAY]
+  const MessageContainer = compose(
+    withDataProviders(() => [messageProvider({ref: 'keepAlive', getData, keepAliveFor: 2 * GET_DATA_DELAY})]),
+    connect((state) => ({content: state.content})),
+  )(Message)
+  const ShowContainer = ({show}) => (
+    <div className="show">
+      {show ? <MessageContainer /> : null}
+      show: {show ? 'true' : 'false'}
+    </div>
+  )
+  const Container = connect((state) => ({show: state.show}))(ShowContainer)
+  const {root, store} = renderApp(<Container />)
+  const toggleShowAction = {type: 'toggle-show', reducer: (state) => ({...state, show: !state.show})}
+  store.dispatch(toggleShowAction)
+
+  // let the component load its data
+  await safeDelay(GET_DATA_DELAY)
+
+  // unmount the component
+  store.dispatch(toggleShowAction)
+  await safeDelay(GET_DATA_DELAY)
+
+  // and mount it again
+  store.dispatch(toggleShowAction)
+  await safeDelay(GET_DATA_DELAY) // 0 delay would be enough, but let's ensure getData wasn't called more than once
+
+  let renderedMessage = root.querySelector('div.message')
+  expectTextContent(renderedMessage).toBe('1')
+
+  // now unmount it again and wait until keepAlive times out
+  store.dispatch(toggleShowAction)
+  await safeDelay(2 * GET_DATA_DELAY)
+
+  // ...and mount it again
+  store.dispatch(toggleShowAction)
+  await safeDelay(GET_DATA_DELAY)
+
+  renderedMessage = root.querySelector('div.message')
+  expectTextContent(renderedMessage).toBe('2')
 })
 
 // common functions, components
@@ -194,4 +227,9 @@ function messageContainer(dpSettings) {
     connect((state) => ({content: state.content})),
     withDataProviders(() => [messageProvider(dpSettings)]),
   )(Message)
+}
+
+function expectTextContent(node) {
+  expect(node).not.toBeNull()
+  return expect(node.textContent)
 }
