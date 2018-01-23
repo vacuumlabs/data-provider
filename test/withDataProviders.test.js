@@ -113,11 +113,11 @@ test('withDataProviders polling', async () => {
 
 test('DataProvider refetches after receiving RETRY from responseHandler', async () => {
   let failCount = 0
-  // retry once, then return data
-  dataProvidersConfig({responseHandler: (response) => (failCount++ < 1 ? RETRY : response)})
   const {root} = renderMessageContainerApp({
     getData: [getDataWithCount, {data: 'count:'}, GET_DATA_DELAY],
-    needed: true
+    needed: true,
+    // retry once, then return data
+    responseHandler: (response) => (failCount++ < 1 ? RETRY : response)
   })
 
   await safeDelay(GET_DATA_DELAY)
