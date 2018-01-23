@@ -16,7 +16,7 @@ export default class DataProvider {
     this.fetching = false
     this.responseHandler = responseHandler
     this.keepAliveFor = keepAliveFor
-    this.expiresAt = null
+    this.expireTimeout = null // will contain timeoutID or true when DP expired
 
     if (initialData !== undefined) {
       this.loaded = true
@@ -26,7 +26,7 @@ export default class DataProvider {
 
   updateUser(userId, {polling=Infinity, needed=true, rawGetData, getData}) {
     let needFetch = false
-    this.expiresAt = null
+    clearTimeout(this.expireTimeout)
 
     if (rawGetData != null && !lo.isEqual(rawGetData, this.rawGetData)) {
       needFetch = true
@@ -60,11 +60,14 @@ export default class DataProvider {
     this.userConfigs.delete(userId)
   }
 
-  disableUser(userId) {
+  disableUser(userId, onExpire) {
     this.userConfigs.get(userId).enabled = false
     const allUsersDisabled = [...this.userConfigs.values()].every((v) => !v.enabled)
     if (this.keepAliveFor && allUsersDisabled) {
-      this.expiresAt = new Date().getTime() + this.keepAliveFor
+      this.expireTimeout = setTimeout(() => {
+        this.expireTimeout = true
+        onExpire(this)
+      }, this.keepAliveFor)
     }
   }
 
@@ -77,7 +80,7 @@ export default class DataProvider {
   }
 
   isExpired() {
-    return this.expiresAt && this.expiresAt < new Date().getTime()
+    return this.expireTimeout === true
   }
 
   canceled() {

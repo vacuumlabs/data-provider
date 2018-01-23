@@ -14,17 +14,24 @@ function call(list) {
 const idg = new IdGenerator()
 const dataProviders = {}
 const dpMap = new Map()
+
+function onDpExpire(dp) {
+  delete dataProviders[dp.id]
+  let dps = dpMap.get(dp.ref)
+  if (dps) {
+    dps.delete(dp.id)
+    if (lo.isEmpty(dps)) {
+      dpMap.delete(dp.ref)
+    }
+  }
+}
+
 function findDp(ref, rawOnData, rawGetData) {
   let dps = dpMap.get(ref)
   if (dps) {
     for (let [dpId, dp] of dps.entries()) {
       if (dp && lo.isEqual(dp.rawOnData, rawOnData) && lo.isEqual(dp.rawGetData, rawGetData)) {
-        if (dp.isExpired()) {
-          dps.delete(dpId)
-          delete dataProviders[dpId]
-        } else {
-          return dp.id
-        }
+        return dpId
       }
     }
   }
@@ -34,7 +41,7 @@ function findDp(ref, rawOnData, rawGetData) {
 function removeUser(dpId, userId) {
   let dp = dataProviders[dpId]
   if (dp.keepAliveFor) {
-    dp.disableUser(userId)
+    dp.disableUser(userId, onDpExpire)
   } else {
     dp.removeUser(userId)
     if (lo.isEmpty(dp.userConfigs)) {
