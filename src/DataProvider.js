@@ -5,7 +5,7 @@ export const RETRY = Symbol('RETRY')
 export const ABORT = Symbol('ABORT')
 
 export default class DataProvider {
-  constructor({id, ref, rawOnData, onData, initialData}) {
+  constructor({id, ref, rawOnData, onData, initialData, responseHandler}) {
     this.id = id
     this.ref = ref
     this.rawOnData = rawOnData
@@ -13,6 +13,7 @@ export default class DataProvider {
     this.userConfigs = {}
     this.loaded = false
     this.fetching = false
+    this.responseHandler = responseHandler
 
     if (initialData !== undefined) {
       this.loaded = true
@@ -107,7 +108,7 @@ export default class DataProvider {
     let data
     try {
       const rawResponse = await this.getDataWithRetry()
-      const response = await cfg.responseHandler(rawResponse)
+      const response = await this.responseHandler(rawResponse)
       if (response === RETRY) {
         return await this.fetch(true)
       } else if (response === ABORT) {

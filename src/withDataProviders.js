@@ -99,7 +99,8 @@ export function withDataProviders(getConfig) {
             initialData,
             polling,
             needed,
-            loadingIcon
+            loadingIcon,
+            responseHandler = cfg.responseHandler
           } = dpConfig
 
           this.loadingIcon = loadingIcon === undefined ? this.loadingIcon : loadingIcon
@@ -128,6 +129,7 @@ export function withDataProviders(getConfig) {
                 this.forceUpdate()
               },
               initialData,
+              responseHandler
             })
           }
 
