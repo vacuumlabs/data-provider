@@ -13,25 +13,25 @@ function call(list) {
 
 const idg = new IdGenerator()
 const dataProviders = {}
-const dpMap = new Map()
+const keepAliveDpMap = new Map()
 
 function onDpExpire(dp) {
   delete dataProviders[dp.id]
-  let dps = dpMap.get(dp.ref)
+  let dps = keepAliveDpMap.get(dp.ref)
   if (dps) {
     dps.delete(dp.id)
     if (lo.isEmpty(dps)) {
-      dpMap.delete(dp.ref)
+      keepAliveDpMap.delete(dp.ref)
     }
   }
 }
 
-function findDp(ref, rawOnData, rawGetData) {
-  let dps = dpMap.get(ref)
+function findSuspendedDp(ref, rawOnData, rawGetData) {
+  let dps = keepAliveDpMap.get(ref)
   if (dps) {
-    for (let [dpId, dp] of dps.entries()) {
-      if (dp && lo.isEqual(dp.rawOnData, rawOnData) && lo.isEqual(dp.rawGetData, rawGetData)) {
-        return dpId
+    for (let dp of dps.values()) {
+      if (dp && dp.suspended() && lo.isEqual(dp.rawOnData, rawOnData) && lo.isEqual(dp.rawGetData, rawGetData)) {
+        return dp.id
       }
     }
   }
@@ -107,7 +107,6 @@ export function withDataProviders(getConfig) {
         this.dataProviders = {}
         this.loadingIcon = cfg.loadingIcon
         this.handleUpdate(this.props)
-        this.mounted = true
       }
 
       componentWillReceiveProps(nextProps) {
@@ -122,13 +121,6 @@ export function withDataProviders(getConfig) {
       componentWillUnmount() {
         for (let dpId in this.dataProviders) {
           removeUser(dpId, this.id)
-        }
-        this.mounted = false
-      }
-
-      updateMountedComponent() {
-        if (this.mounted) {
-          this.forceUpdate()
         }
       }
 
@@ -158,8 +150,12 @@ export function withDataProviders(getConfig) {
             {...this.context.dataProviders, ...this.dataProviders},
             (dpRef) => lo.isEqual(dpRef, ref))
 
+          let updateComponentRefresh = false
           if (dpId == null && keepAliveFor) {
-            dpId = findDp(ref, rawOnData, rawGetData)
+            dpId = findSuspendedDp(ref, rawOnData, rawGetData)
+            if (dpId) {
+              updateComponentRefresh = true
+            }
           }
           if (dpId == null) {
             assert(rawOnData != null && rawGetData != null,
@@ -172,24 +168,26 @@ export function withDataProviders(getConfig) {
               id: dpId,
               ref,
               rawOnData,
-              onData: (data) => {
-                call(rawOnData)(ref, data, this.context.dispatch)
-                this.updateMountedComponent()
-              },
+              onData: (data) => call(rawOnData)(ref, data, this.context.dispatch),
               initialData,
               responseHandler,
-              keepAliveFor
+              keepAliveFor,
+              componentRefresh: this.forceUpdate.bind(this)
             })
             if (keepAliveFor) {
-              if (dpMap.has(ref)) {
-                dpMap.get(ref).set(dpId, dataProviders[dpId])
+              if (keepAliveDpMap.has(ref)) {
+                keepAliveDpMap.get(ref).set(dpId, dataProviders[dpId])
               } else {
-                dpMap.set(ref, new Map([[dpId, dataProviders[dpId]]]))
+                keepAliveDpMap.set(ref, new Map([[dpId, dataProviders[dpId]]]))
               }
             }
           }
 
           let dp = dataProviders[dpId]
+
+          if (updateComponentRefresh) {
+            dp.setComponentRefresh(this.forceUpdate.bind(this))
+          }
 
           // Changing onData for existing data provider is not currently
           // supported

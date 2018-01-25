@@ -6,27 +6,39 @@ const RETRY = Symbol('RETRY')
 export const ABORT = Symbol('ABORT')
 
 export default class DataProvider {
-  constructor({id, ref, rawOnData, onData, initialData, responseHandler, keepAliveFor = false}) {
+  constructor({id, ref, rawOnData, onData, initialData, responseHandler, keepAliveFor = false, componentRefresh}) {
     this.id = id
     this.ref = ref
     this.rawOnData = rawOnData
     this.onData = onData
+    this.componentRefreshFn = componentRefresh
     this.userConfigs = new Map()
     this.loaded = false
     this.fetching = false
     this.responseHandler = responseHandler
     this.keepAliveFor = keepAliveFor
-    this.expireTimeout = null // will contain timeoutID or true when DP expired
+    this.expireTimeout = null // will contain timeoutID
+    this.hasExpired = false
 
     if (initialData !== undefined) {
       this.loaded = true
       this.onData(initialData)
+      this.refreshComponent()
     }
+  }
+
+  refreshComponent() {
+    this.componentRefreshFn && this.componentRefreshFn()
+  }
+
+  setComponentRefresh(componentRefresh) {
+    this.componentRefreshFn = componentRefresh
   }
 
   updateUser(userId, {polling=Infinity, needed=true, rawGetData, getData}) {
     let needFetch = false
     clearTimeout(this.expireTimeout)
+    this.expireTimeout = null
 
     if (rawGetData != null && !lo.isEqual(rawGetData, this.rawGetData)) {
       needFetch = true
@@ -64,11 +76,16 @@ export default class DataProvider {
     this.userConfigs.get(userId).enabled = false
     const allUsersDisabled = [...this.userConfigs.values()].every((v) => !v.enabled)
     if (this.keepAliveFor && allUsersDisabled) {
+      this.setComponentRefresh(null)
       this.expireTimeout = setTimeout(() => {
-        this.expireTimeout = true
+        this.hasExpired = true
         onExpire(this)
       }, this.keepAliveFor)
     }
+  }
+
+  suspended() {
+    return this.expireTimeout != null
   }
 
   polling() {
@@ -79,13 +96,13 @@ export default class DataProvider {
     return [...this.userConfigs.values()].reduce((prev, {needed}) => prev || needed, false)
   }
 
-  isExpired() {
-    return this.expireTimeout === true
+  expired() {
+    return this.hasExpired
   }
 
   canceled() {
     return this.keepAliveFor <= 0 && lo.isEmpty(this.userConfigs)
-      || this.isExpired()
+      || this.expired()
   }
 
   scheduleNextFetch() {
@@ -139,6 +156,7 @@ export default class DataProvider {
     if (!this.canceled() && data) {
       this.loaded = true
       this.onData(data)
+      this.refreshComponent()
     }
     this.scheduleNextFetch()
   }
