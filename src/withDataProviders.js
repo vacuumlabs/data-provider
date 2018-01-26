@@ -13,8 +13,17 @@ function call(list) {
 
 const idg = new IdGenerator()
 const dataProviders = {}
+// TODO-TK I don't like this datastructure-per-query approach. All
+// this is good for is to query suspended DPs with a given ref quickly. But a) speed is not so
+// important now and b) we can always add memoization later. Don't create such indexes until you
+// really need to.
+// TODO-TK What will happen if there are two suspended DPs with a same ref?
+// TODO-TK references could be maps or arrays. In such a case, this probably won't function
+// correctly?
 const keepAliveDpMap = new Map()
 
+// TODO-TK don't obfuscate the code like this. If DP needs to do something on it's expiration, let them do it directly.
+// If DP need dataProviders map (or anything else), let them have it.
 function onDpExpire(dp) {
   delete dataProviders[dp.id]
   let dps = keepAliveDpMap.get(dp.ref)
@@ -26,6 +35,15 @@ function onDpExpire(dp) {
   }
 }
 
+// TODO-TK this 'i.e. query providers / users with some properties' should be solved more
+// systematically (this is also mentioned elsewhere)
+// TODO-TK I've done some thinking and I believe we should change the contract such that ref
+// determines how onData and getData looks like. The use-case for the current approach is provider
+// with ref 'selectedHouse' (think real estate app) with getData and onData depending on what house
+// does the user really interact with. Such DP may have some appeal, but you can as well use ref
+// ['selectedHouse', currentHouseUUID] and you are good to go. Not even it'll work just as smooth,
+// but it may even steer developer towards better practices - for example, it's a bad idea to have
+// object on a constant place with semantics 'house being selected' in your appstate.
 function findSuspendedDp(ref, rawOnData, rawGetData) {
   let dps = keepAliveDpMap.get(ref)
   if (dps) {

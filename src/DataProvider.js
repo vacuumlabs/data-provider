@@ -5,13 +5,23 @@ import {Promise} from 'bluebird'
 const RETRY = Symbol('RETRY')
 export const ABORT = Symbol('ABORT')
 
+// TODO-TK I think we shouldn't encapsulate state as much as we do it now. Basically, what we need
+// to remember about the system is:
+// - all dataProviders
+// - all users
+// - links between configs and poviders (think how to store them as easily as possible).
+// Then we need a few query functions so we can access the data quikly.
+
 export default class DataProvider {
   constructor({id, ref, rawOnData, onData, initialData, responseHandler, keepAliveFor = false, componentRefresh}) {
     this.id = id
     this.ref = ref
     this.rawOnData = rawOnData
     this.onData = onData
+    // TODO-TK I don't get this. One DP can be used with many components, so which one gets
+    // refreshed when this is called? Am I missing something?
     this.componentRefreshFn = componentRefresh
+    // TODO-TK Why Map? Simple object should probably be enough?
     this.userConfigs = new Map()
     this.loaded = false
     this.fetching = false
@@ -31,6 +41,7 @@ export default class DataProvider {
     this.componentRefreshFn && this.componentRefreshFn()
   }
 
+  // TODO-TK remove setter
   setComponentRefresh(componentRefresh) {
     this.componentRefreshFn = componentRefresh
   }
@@ -89,6 +100,10 @@ export default class DataProvider {
   }
 
   polling() {
+    // TODO-TK I'd prefer using lodash.reduce (which works on any iterables) instead of copying the
+    // whole array, just so you can use native .reduce. If you don't like to type much feel free to
+    // import lodash as _. Also, I've noticed, this pattern is used also on other places, it'd be
+    // good to clean it as well.
     return [...this.userConfigs.values()].reduce((prev, {polling}) => Math.min(polling, prev), Infinity)
   }
 
@@ -125,6 +140,8 @@ export default class DataProvider {
     return data === RETRY ? this.getDataWithRetry(retries - 1, getDataCalls) : data
   }
 
+  // TODO-TK why does it work as described? The last part seems to be quite arbitrary - why does
+  // force result in concurrent fetches?
   /**
    * Fetch calls this.getData() to retrieve data and passes it through resolveHandler and then to this.onData().
    * If there already is a fetch in-progress and another fetch() is called concurrently (e.g. nested DP),
