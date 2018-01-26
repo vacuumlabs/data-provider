@@ -9,11 +9,14 @@ export const cfg = {
 }
 
 function defaultResponseHandler(response) {
+  // TODO-TK wouldn't it be nice defaultly JSON.parse JSON content, at least when content-type indicates so?
   return response
 }
 
 /**
  * Provides a way to set global configuration options for Data Providers
+ * // TODO-TK What is this? Is it supposed to be somehow parsed or what? Unless it actually brings
+ * // some information, please remove it.
  * @param options
  */
 export function dataProvidersConfig(options) {

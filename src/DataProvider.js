@@ -74,6 +74,7 @@ export default class DataProvider {
   }
 
   getDataWithRetry() {
+    // TODO-TK: Why so low-levelish? Whats wrong about async-await syntax?
     return new Promise((resolve, reject) => {
       let lastTimeout
       let timedGetData = async (retries) => {
@@ -82,8 +83,11 @@ export default class DataProvider {
           return
         }
         lastTimeout = setTimeout(timedGetData, cfg.fetchTimeout, retries - 1)
+        // TODO-TK you should probably also handle the cases when getData throws..?
         let data = await this.getData()
         clearTimeout(lastTimeout)
+        // TODO-TK: this may be called multiple times. Not sure if this is allowed, but I'd like not
+        // to do this
         resolve(data)
       }
       timedGetData(cfg.maxTimeoutRetries)
@@ -109,6 +113,8 @@ export default class DataProvider {
     try {
       const rawResponse = await this.getDataWithRetry()
       const response = await this.responseHandler(rawResponse)
+      // TODO-TK is there any valid business reason for responseHandler to return RETRY? It seems to
+      // me that retrying is already take care of by getDataWithRetry
       if (response === RETRY) {
         return await this.fetch(true)
       } else if (response === ABORT) {
@@ -126,6 +132,7 @@ export default class DataProvider {
     }
     this.scheduleNextFetch()
 
+    // TODO-TK why?
     return Promise.resolve()
   }
 }
