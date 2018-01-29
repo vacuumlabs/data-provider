@@ -3,7 +3,7 @@ import React from 'react'
 import ReactDOM from 'react-dom'
 import {withDataProviders} from '../src/withDataProviders'
 import {dataProvidersConfig, cfg} from '../src/config'
-import {RETRY, ABORT} from '../src/DataProvider'
+import {ABORT} from '../src/DataProvider'
 import {compose} from 'redux'
 import {connect} from 'react-redux'
 import {newTestApp, getData, getDataWithCount, safeDelay, GET_DATA_DELAY} from './common'
@@ -109,27 +109,6 @@ test('withDataProviders polling', async () => {
   expect(renderedMessage.textContent).toMatch(countRegexp)
   const secondCount = parseInt(countRegexp.exec(renderedMessage.textContent)[1], 10)
   expect(secondCount).toBe(firstCount + 1)
-})
-
-test('DataProvider refetches after receiving RETRY from responseHandler', async () => {
-  let failCount = 0
-  const {root} = renderMessageContainerApp({
-    getData: [getDataWithCount, {data: 'count:'}, GET_DATA_DELAY],
-    needed: true,
-    // retry once, then return data
-    responseHandler: (response) => (failCount++ < 1 ? RETRY : response)
-  })
-
-  await safeDelay(GET_DATA_DELAY)
-  // responseHandler returns RETRY and getData is called for the 2nd time, message isn't rendered
-  let renderedMessage = root.querySelector('div.message p')
-  expect(renderedMessage).toBeNull()
-
-  await safeDelay(GET_DATA_DELAY)
-  // responseHandler simply returns response, getData isn't called anymore and message is rendered correctly
-  renderedMessage = root.querySelector('div.message p')
-  expect(renderedMessage).not.toBeNull()
-  expect(renderedMessage.textContent).toBe('count:2')
 })
 
 test('DataProvider aborts after receiving ABORT from responseHandler', async () => {

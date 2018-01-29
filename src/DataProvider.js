@@ -1,7 +1,8 @@
 import lo from 'lodash'
 import {cfg} from './config'
+import {Promise} from 'bluebird'
 
-export const RETRY = Symbol('RETRY')
+const RETRY = Symbol('RETRY')
 export const ABORT = Symbol('ABORT')
 
 export default class DataProvider {
@@ -73,36 +74,25 @@ export default class DataProvider {
     }, this.polling())
   }
 
-  getDataWithRetry() {
-    // TODO-TK: Why so low-levelish? Whats wrong about async-await syntax?
-    return new Promise((resolve, reject) => {
-      let lastTimeout
-      let timedGetData = async (retries) => {
-        if (retries < 0) {
-          reject()
-          return
-        }
-        lastTimeout = setTimeout(timedGetData, cfg.fetchTimeout, retries - 1)
-        // TODO-TK you should probably also handle the cases when getData throws..?
-        let data = await this.getData()
-        clearTimeout(lastTimeout)
-        // TODO-TK: this may be called multiple times. Not sure if this is allowed, but I'd like not
-        // to do this
-        resolve(data)
-      }
-      timedGetData(cfg.maxTimeoutRetries)
-    })
+  async getDataWithRetry(retries, previous = []) {
+    if (retries < 0) {
+      throw new Error(`DataProvider (ref=${this.ref}) has timed out.`)
+    }
+    let timeout = Promise.delay(cfg.fetchTimeout).then(() => RETRY)
+    let getDataCalls = [this.getData(), ...previous]
+    let data = await Promise.race([timeout, ...getDataCalls])
+    return data === RETRY ? this.getDataWithRetry(retries - 1, getDataCalls) : data
   }
 
   /**
    * Fetch calls this.getData() to retrieve data and passes it through resolveHandler and then to this.onData().
-   * If there already is a fetch in-progress and another fetch() is called concurrently,
+   * If there already is a fetch in-progress and another fetch() is called concurrently (e.g. nested DP),
    * it will not trigger another getData call, but it will return immediately - UNLESS
-   * force parameter is set to true
+   * force parameter is set to true (e.g. useful when data change and refetch() is called)
    */
   async fetch(force = false) {
     if (this.canceled() || (!force && this.fetching)) {
-      return null
+      return
     }
     this.fetching = true
     if (this.timer) {
@@ -111,13 +101,9 @@ export default class DataProvider {
 
     let data
     try {
-      const rawResponse = await this.getDataWithRetry()
+      const rawResponse = await this.getDataWithRetry(cfg.maxTimeoutRetries)
       const response = await this.responseHandler(rawResponse)
-      // TODO-TK is there any valid business reason for responseHandler to return RETRY? It seems to
-      // me that retrying is already take care of by getDataWithRetry
-      if (response === RETRY) {
-        return await this.fetch(true)
-      } else if (response === ABORT) {
+      if (response === ABORT) {
         data = null
       } else {
         data = response
@@ -131,8 +117,5 @@ export default class DataProvider {
       this.onData(data)
     }
     this.scheduleNextFetch()
-
-    // TODO-TK why?
-    return Promise.resolve()
   }
 }

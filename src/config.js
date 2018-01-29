@@ -1,5 +1,6 @@
 import React from 'react'
 import {LoadingIcon} from './LoadingIcon'
+import {ABORT} from './DataProvider'
 
 export const cfg = {
   responseHandler: defaultResponseHandler,
@@ -9,15 +10,21 @@ export const cfg = {
 }
 
 function defaultResponseHandler(response) {
-  // TODO-TK wouldn't it be nice defaultly JSON.parse JSON content, at least when content-type indicates so?
-  return response
+  if (!response || typeof response.ok !== 'boolean' || !response.headers) {
+    return response
+  }
+  if (!response.ok) {
+    return ABORT
+  }
+  let contentType = response.headers.get('content-type')
+  if (contentType && contentType.includes('application/json')) {
+    return response.json()
+  }
+  return response.text()
 }
 
 /**
  * Provides a way to set global configuration options for Data Providers
- * // TODO-TK What is this? Is it supposed to be somehow parsed or what? Unless it actually brings
- * // some information, please remove it.
- * @param options
  */
 export function dataProvidersConfig(options) {
   options = Object(options)
