@@ -1,6 +1,7 @@
 import lo from 'lodash'
 import {cfg} from './config'
 import {Promise} from 'bluebird'
+import {dataProviderExpired, getUsersForDp} from './storage'
 
 const RETRY = Symbol('RETRY')
 export const ABORT = Symbol('ABORT')
@@ -13,16 +14,13 @@ export const ABORT = Symbol('ABORT')
 // Then we need a few query functions so we can access the data quikly.
 
 export default class DataProvider {
-  constructor({id, ref, rawOnData, onData, initialData, responseHandler, keepAliveFor = false, componentRefresh}) {
+  constructor({id, ref, rawGetData, getData, rawOnData, onData, initialData, responseHandler, keepAliveFor = false, componentRefresh}) {
     this.id = id
     this.ref = ref
+    this.rawGetData = rawGetData
+    this.getData = getData
     this.rawOnData = rawOnData
     this.onData = onData
-    // TODO-TK I don't get this. One DP can be used with many components, so which one gets
-    // refreshed when this is called? Am I missing something?
-    this.componentRefreshFn = componentRefresh
-    // TODO-TK Why Map? Simple object should probably be enough?
-    this.userConfigs = new Map()
     this.loaded = false
     this.fetching = false
     this.responseHandler = responseHandler
@@ -33,40 +31,20 @@ export default class DataProvider {
     if (initialData !== undefined) {
       this.loaded = true
       this.onData(initialData)
-      this.refreshComponent()
+      this.refreshComponents()
     }
   }
 
-  refreshComponent() {
-    this.componentRefreshFn && this.componentRefreshFn()
+  refreshComponents() {
+    getUsersForDp(this.id).forEach(({refreshFn}) => {refreshFn && refreshFn()})
   }
 
-  // TODO-TK remove setter
-  setComponentRefresh(componentRefresh) {
-    this.componentRefreshFn = componentRefresh
-  }
-
-  updateUser(userId, {polling=Infinity, needed=true, rawGetData, getData}) {
-    let needFetch = false
+  updateUser(isFirst, oldDpPolling) {
+    let needFetch = isFirst
     clearTimeout(this.expireTimeout)
     this.expireTimeout = null
 
-    if (rawGetData != null && !lo.isEqual(rawGetData, this.rawGetData)) {
-      needFetch = true
-      this.rawGetData = rawGetData
-      this.getData = getData
-      this.loaded = false
-    }
-
-    let oldPolling = this.polling()
-    for (let [uId, cfg] of this.userConfigs.entries()) {
-      if (cfg.polling === polling && cfg.needed === needed && !cfg.enabled) {
-        this.userConfigs.delete(uId)
-      }
-    }
-    this.userConfigs.set(userId, {polling, needed, enabled: true})
-
-    if (this.polling() < oldPolling) {
+    if (this.polling() < oldDpPolling) {
       needFetch = true
     }
 
@@ -79,20 +57,11 @@ export default class DataProvider {
     }
   }
 
-  removeUser(userId) {
-    this.userConfigs.delete(userId)
-  }
-
-  disableUser(userId, onExpire) {
-    this.userConfigs.get(userId).enabled = false
-    const allUsersDisabled = [...this.userConfigs.values()].every((v) => !v.enabled)
-    if (this.keepAliveFor && allUsersDisabled) {
-      this.setComponentRefresh(null)
-      this.expireTimeout = setTimeout(() => {
-        this.hasExpired = true
-        onExpire(this)
-      }, this.keepAliveFor)
-    }
+  suspend() {
+    this.expireTimeout = setTimeout(() => {
+      this.hasExpired = true
+      dataProviderExpired(this.id)
+    }, this.keepAliveFor)
   }
 
   suspended() {
@@ -100,15 +69,11 @@ export default class DataProvider {
   }
 
   polling() {
-    // TODO-TK I'd prefer using lodash.reduce (which works on any iterables) instead of copying the
-    // whole array, just so you can use native .reduce. If you don't like to type much feel free to
-    // import lodash as _. Also, I've noticed, this pattern is used also on other places, it'd be
-    // good to clean it as well.
-    return [...this.userConfigs.values()].reduce((prev, {polling}) => Math.min(polling, prev), Infinity)
+    return lo.reduce(getUsersForDp(this.id), (prev, {polling}) => Math.min(polling, prev), Infinity)
   }
 
   needed() {
-    return [...this.userConfigs.values()].reduce((prev, {needed}) => prev || needed, false)
+    return lo.some(getUsersForDp(this.id), ({needed}) => needed)
   }
 
   expired() {
@@ -116,7 +81,7 @@ export default class DataProvider {
   }
 
   canceled() {
-    return this.keepAliveFor <= 0 && lo.isEmpty(this.userConfigs)
+    return this.keepAliveFor <= 0 && lo.isEmpty(getUsersForDp(this.id))
       || this.expired()
   }
 
@@ -173,7 +138,7 @@ export default class DataProvider {
     if (!this.canceled() && data) {
       this.loaded = true
       this.onData(data)
-      this.refreshComponent()
+      this.refreshComponents()
     }
     this.scheduleNextFetch()
   }
