@@ -3,7 +3,6 @@ import {BrowserRouter as Router, Route, NavLink, Switch} from 'react-router-dom'
 import {NestedProvidersExample} from './NestedProvidersExample'
 import {SingleDataProviderExample} from './SingleProviderExample'
 import {PollingExample} from './PollingExample'
-import {ResponseHandlerExample} from './ResponseHandlerExample'
 import {RefetchExample} from './RefetchExample'
 
 const Home = () => (<div><p>Choose an example</p></div>)
@@ -23,11 +22,6 @@ const exampleRoutes = [
     path: '/polling',
     component: PollingExample,
     title: 'Polling'
-  },
-  {
-    path: '/responseHandler',
-    component: ResponseHandlerExample,
-    title: 'Response Handler'
   },
   {
     path: '/refetch',
