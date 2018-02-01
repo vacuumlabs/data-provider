@@ -8,7 +8,7 @@ The contract:
 * Decorate your React component, provide config where you specify how to get
   data and what to do with it (e.g. dispatch to app state)
 * You can count on the data being fetched and handled when writing the code for
-  the decoraded React component
+  the decorated React component
 
 # Example
 
@@ -36,22 +36,25 @@ const updateBlogPost = (blogPostId) => (ref, data, dispatch) => {
 compose(
   withDataProviders((props) => [
     {
-      // Unique reference; should work well with lodash.isEqual (string,
-      // array, object, ...)
+      // Unique reference; should work well with lodash.isEqual (string, array, object, ...)
+      // and should depend on the same parameters as getData / onData do
       ref: ['blog-post', props.blogPostId],
       // Possibly async (promise-returning) function how to fetch data.
       // Expressed in clojure-like fashion, i.e. [fn, arg1, arg2, ...]
       getData: [fetch, `/api/blog-post/${props.blogPostId}`],
-      // What to do with obtaned data. onData [fn, arg1, arg2] means that
+      // What to do with obtained data. onData [fn, arg1, arg2] means that
       // fn(arg1, arg2)(ref, data, dispatch) will be called. Dispatch is taken from
       // context, which is the case if you are using this with redux and react-redux.
       onData: [updateBlogPost, props.blogPostId],
       // How often to refetch data, in milliseconds
       polling: 10 * 60 * 1000,
       // The component is not rendered until data is fetched.
-      // Defaults to true; false can be used for eager pre-fetchig of data for child
+      // Defaults to true; false can be used for eager pre-fetching of data for child
       // components
       needed: true,
+      // How long to keep the data alive, so it isn't refetched unnecessarily 
+      // Optional, defaults to 0 (disabled), in milliseconds
+      keepAliveFor: 10 * 60 * 1000,
       // Optionally, the (first) fetch can be skipped by providing initialData (for
       // example, data can be put to html-data-attribute during server-side rendering)
       initialData: {title: ..., body: ...}

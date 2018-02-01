@@ -26,7 +26,12 @@ export function getUsersForDp(dpId) {
   return r
 }
 
-// returns all dataproviders for given userId
+// returns all configs for given userId (dpId:cfg pairs)
+export function getAllUserConfigs(userId) {
+  return userConfigs[userId]
+}
+
+// returns all data providers for given userId
 export function getDPsForUser(userId) {
   let r = []
   for (let dpId of lo.keys(userConfigs[userId])) {
@@ -48,7 +53,7 @@ export function addDataProvider(config) {
 }
 
 // adds new config for given userId - dpId
-export function addUserConfig(userId, dpId, {needed = false, polling = Infinity, refreshFn}) {
+export function addUserConfig(userId, dpId, {needed = true, polling = Infinity, refreshFn}) {
   const dp = dataProviders[dpId]
   const oldPolling = dp.polling()
   const path = `${userId}.${dpId}`

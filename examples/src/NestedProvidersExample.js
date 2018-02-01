@@ -16,12 +16,9 @@ const Post = ({title, body}) => (
 )
 
 // PostContainer uses a data-provider with needed === true
-// - order of connect / withDataProviders is important here, since when data is fetched
-// and dispatched by parent DP, this connect component needs to react to state change - it wouldn't be able to,
-// if it was "under" this DP, because it didn't exist yet
 const PostContainer = compose(
-  connect((state) => (state[EXAMPLE_ID])),
   withDataProviders(() => [postProvider(true, EXAMPLE_ID)]),
+  connect((state) => (state[EXAMPLE_ID])),
 )(Post)
 
 const ToggleablePostContainer = ({showPost}) => (

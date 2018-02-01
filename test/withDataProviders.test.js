@@ -224,8 +224,8 @@ function Message({content}) {
 
 function messageContainer(dpSettings) {
   return compose(
-    connect((state) => ({content: state.content})),
     withDataProviders(() => [messageProvider(dpSettings)]),
+    connect((state) => ({content: state.content})),
   )(Message)
 }
 

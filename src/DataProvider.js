@@ -6,27 +6,20 @@ import {dataProviderExpired, getUsersForDp} from './storage'
 const RETRY = Symbol('RETRY')
 export const ABORT = Symbol('ABORT')
 
-// TODO-TK I think we shouldn't encapsulate state as much as we do it now. Basically, what we need
-// to remember about the system is:
-// - all dataProviders
-// - all users
-// - links between configs and poviders (think how to store them as easily as possible).
-// Then we need a few query functions so we can access the data quikly.
-
 export default class DataProvider {
-  constructor({id, ref, rawGetData, getData, rawOnData, onData, initialData, responseHandler, keepAliveFor = false, componentRefresh}) {
+  constructor({id, ref, rawGetData, getData, rawOnData, onData, initialData, responseHandler, keepAliveFor = 0}) {
     this.id = id
     this.ref = ref
     this.rawGetData = rawGetData
     this.getData = getData
     this.rawOnData = rawOnData
     this.onData = onData
-    this.loaded = false
-    this.fetching = false
     this.responseHandler = responseHandler
     this.keepAliveFor = keepAliveFor
-    this.expireTimeout = null // will contain timeoutID
-    this.hasExpired = false
+    this.loaded = false // keeps track of whether the data has already been fetched
+    this.fetching = false // indicates a fetch in-progress
+    this.expireTimeout = null // for DPs with keepAlive, it contains timeoutID
+    this.hasExpired = false // for DPs with keepAlive, indicates an expired DP
 
     if (initialData !== undefined) {
       this.loaded = true
@@ -105,8 +98,6 @@ export default class DataProvider {
     return data === RETRY ? this.getDataWithRetry(retries - 1, getDataCalls) : data
   }
 
-  // TODO-TK why does it work as described? The last part seems to be quite arbitrary - why does
-  // force result in concurrent fetches?
   /**
    * Fetch calls this.getData() to retrieve data and passes it through resolveHandler and then to this.onData().
    * If there already is a fetch in-progress and another fetch() is called concurrently (e.g. nested DP),

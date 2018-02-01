@@ -4,8 +4,8 @@ import lo from 'lodash'
 import {assert, IdGenerator} from './util'
 import {cfg} from './config'
 import {
-  addDataProvider, addUserConfig, findDpWithRef, getDataProvider, getDPsForUser, getUserConfigForDp, refetch,
-  removeDpUser
+  addDataProvider, addUserConfig, findDpWithRef, getAllUserConfigs, getDataProvider, getDPsForUser,
+  refetch, removeDpUser
 } from './storage'
 
 function call(list) {
@@ -15,16 +15,6 @@ function call(list) {
 }
 
 const idg = new IdGenerator()
-
-// TODO-TK this 'i.e. query providers / users with some properties' should be solved more
-// systematically (this is also mentioned elsewhere)
-// TODO-TK I've done some thinking and I believe we should change the contract such that ref
-// determines how onData and getData looks like. The use-case for the current approach is provider
-// with ref 'selectedHouse' (think real estate app) with getData and onData depending on what house
-// does the user really interact with. Such DP may have some appeal, but you can as well use ref
-// ['selectedHouse', currentHouseUUID] and you are good to go. Not even it'll work just as smooth,
-// but it may even steer developer towards better practices - for example, it's a bad idea to have
-// object on a constant place with semantics 'house being selected' in your appstate.
 
 export function withRefetch() {
   return (Component) => {
@@ -60,10 +50,7 @@ export function withDataProviders(getConfig) {
       }
 
       componentWillReceiveProps(nextProps) {
-        // Make sure context is updated (shouldComponentUpdate of some parent
-        // component might prevent it from being updated)
         if (!lo.isEqual(this.props, nextProps)) {
-          this.forceUpdate()
           this.handleUpdate(nextProps)
         }
       }
@@ -150,13 +137,11 @@ export function withDataProviders(getConfig) {
             removeDpUser(dpId, this.id)
           }
         }
-
-        this.forceUpdate()
       }
 
       render() {
-        let show = getDPsForUser(this.id).every((dp) => {
-          return !getUserConfigForDp(dp.id, this.id).needed || dp.loaded
+        let show = lo.entries(getAllUserConfigs(this.id)).every(([dpId, {enabled, needed}]) => {
+          return !needed || !enabled || getDataProvider(dpId).loaded
         })
         return show ? <Component {...this.props} /> : this.loadingIcon
       }
