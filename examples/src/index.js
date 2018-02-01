@@ -3,9 +3,9 @@ import ReactDOM from 'react-dom'
 import React from 'react'
 import './index.css'
 import PropTypes from 'prop-types'
-import {App} from './App'
 import {Provider} from 'react-redux'
 import configureStore from './configureStore'
+import {App} from './App'
 
 const store = configureStore()
 
