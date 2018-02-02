@@ -1,9 +1,12 @@
 import {cfg} from './config'
 import {Promise} from 'bluebird'
 import {dataProviderExpired, getUsersForDp, getPolling, getCanceled} from './storage'
+import {FetchManager} from './FetchManager'
 
 const RETRY = Symbol('RETRY')
 export const ABORT = Symbol('ABORT')
+
+const fm = new FetchManager()
 
 export default class DataProvider {
   constructor({id, ref, rawGetData, getData, rawOnData, onData, initialData, responseHandler, keepAliveFor = 0}) {
@@ -19,6 +22,7 @@ export default class DataProvider {
     this.fetching = false // indicates a fetch in-progress
     this.expireTimeout = null // for DPs with keepAlive, it contains timeoutID
     this.hasExpired = false // for DPs with keepAlive, indicates an expired DP
+    this.lastFetchId = -1 // ID of a last successful fetch, helps prevent unnecessary scheduled fetches
 
     if (initialData !== undefined) {
       this.loaded = true
@@ -31,7 +35,7 @@ export default class DataProvider {
     getUsersForDp(this.id).forEach(({refreshFn}) => {refreshFn && refreshFn()})
   }
 
-  updateUser(isFirst, oldDpPolling) {
+  updateUser(isFirst, needed, oldDpPolling) {
     let needFetch = isFirst
     clearTimeout(this.expireTimeout)
     this.expireTimeout = null
@@ -45,7 +49,7 @@ export default class DataProvider {
     }
 
     if (needFetch) {
-      this.fetch()
+      this.fetch(false, needed)
     }
   }
 
@@ -70,7 +74,7 @@ export default class DataProvider {
     }
 
     this.timer = setTimeout(() => {
-      this.fetch()
+      this.fetch(false, false)
     }, getPolling(this.id))
   }
 
@@ -84,14 +88,19 @@ export default class DataProvider {
     return data === RETRY ? this.getDataWithRetry(retries - 1, getDataCalls) : data
   }
 
+  fetch(force, needed) {
+    fm.scheduleFetch(force, needed, this.doFetch.bind(this))
+  }
+
   /**
    * Fetch calls this.getData() to retrieve data and passes it through resolveHandler and then to this.onData().
    * If there already is a fetch in-progress and another fetch() is called concurrently (e.g. nested DP),
    * it will not trigger another getData call, but it will return immediately - UNLESS
    * force parameter is set to true (e.g. useful when data change and refetch() is called)
    */
-  async fetch(force = false) {
-    if (getCanceled(this.id) || (!force && this.fetching)) {
+  async doFetch(fetchId, force = false) {
+    const newerFetchAlreadyFinished = this.lastFetchId > fetchId
+    if (getCanceled(this.id) || (!force && this.fetching) || newerFetchAlreadyFinished) {
       return
     }
     this.fetching = true
@@ -114,6 +123,7 @@ export default class DataProvider {
 
     if (!getCanceled(this.id) && data) {
       this.loaded = true
+      this.lastFetchId = fetchId
       this.onData(data)
       this.refreshComponents()
     }

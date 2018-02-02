@@ -1,18 +1,12 @@
 import PropTypes from 'prop-types'
 import React from 'react'
 import lo from 'lodash'
-import {assert, IdGenerator} from './util'
+import {assert, call, IdGenerator} from './util'
 import {cfg} from './config'
 import {
   addDataProvider, addUserConfig, findDpWithRef, getAllUserConfigs, getDataProvider, getDPsForUser,
   refetch, removeDpUser
 } from './storage'
-
-function call(list) {
-  let fn = list[0]
-  let args = list.slice(1)
-  return fn(...args)
-}
 
 const idg = new IdGenerator()
 
