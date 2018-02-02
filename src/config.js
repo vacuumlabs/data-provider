@@ -10,7 +10,7 @@ export const cfg = {
 }
 
 function defaultResponseHandler(response) {
-  if (!response || typeof response.ok !== 'boolean' || !response.headers) {
+  if (!(typeof Response !== 'undefined' && response instanceof Response)) {
     return response
   }
   if (!response.ok) {
