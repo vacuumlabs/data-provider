@@ -1,8 +1,8 @@
 import PropTypes from 'prop-types'
 import React from 'react'
 import lo from 'lodash'
-import {assert, call, IdGenerator, defaultOnAbort} from './util'
-import {cfg} from './config'
+import { assert, call, IdGenerator, defaultOnAbort } from './util'
+import { cfg } from './config'
 import {
   addDataProvider, addUserConfig, findDpWithRef, getAllUserConfigs, getDataProvider, getDPsForUser,
   refetch, removeDpUser
@@ -34,7 +34,7 @@ export function withDataProviders(getConfig) {
     return class ComponentWithDataProviders extends React.Component {
 
       static contextTypes = {
-        dispatch: PropTypes.func.isRequired,
+        store: PropTypes.object.isRequired,
       }
 
       componentWillMount() {
@@ -51,7 +51,7 @@ export function withDataProviders(getConfig) {
       }
 
       componentWillUnmount() {
-        for (let {id: dpId} of getDPsForUser(this.id)) {
+        for (let { id: dpId } of getDPsForUser(this.id)) {
           removeDpUser(dpId, this.id)
         }
       }
@@ -96,9 +96,9 @@ export function withDataProviders(getConfig) {
               rawGetData,
               getData: () => call(rawGetData),
               rawOnData,
-              onData: (data) => call(rawOnData)(ref, data, this.context.dispatch),
+              onData: (data) => call(rawOnData)(ref, data, this.context.store.dispatch),
               rawOnAbort,
-              onAbort: (errorData) => call(rawOnAbort)(ref, errorData, this.context.dispatch),
+              onAbort: (errorData) => call(rawOnAbort)(ref, errorData, this.context.store.dispatch),
               initialData,
               responseHandler,
               keepAliveFor
@@ -139,7 +139,7 @@ export function withDataProviders(getConfig) {
 
         // this is used when handleUpdate is called for existing component, but with new props,
         // so its data providers could've changed
-        for (let {id: dpId} of oldDataProviders) {
+        for (let { id: dpId } of oldDataProviders) {
           if (!lo.has(newDataProviders, dpId)) {
             removeDpUser(dpId, this.id)
           }
@@ -147,13 +147,13 @@ export function withDataProviders(getConfig) {
       }
 
       render() {
-        const {show, error, fetching} = lo.entries(getAllUserConfigs(this.id)).reduce(({show, error, fetching},
-          [dpId, {needed, injectLoading}]) => ({
-          show: show && (!needed || getDataProvider(dpId).loaded),
-          error: error || (needed && getDataProvider(dpId).error),
-          fetching: fetching || (!needed && !getDataProvider(dpId).loaded && injectLoading),
-        }), {show: true, error: false, fetching: false})
-        const injectedProps = fetching ? {dataProviderLoading: fetching} : {}
+        const { show, error, fetching } = lo.entries(getAllUserConfigs(this.id)).reduce(({ show, error, fetching },
+          [dpId, { needed, injectLoading }]) => ({
+            show: show && (!needed || getDataProvider(dpId).loaded),
+            error: error || (needed && getDataProvider(dpId).error),
+            fetching: fetching || (!needed && !getDataProvider(dpId).loaded && injectLoading),
+          }), { show: true, error: false, fetching: false })
+        const injectedProps = fetching ? { dataProviderLoading: fetching } : {}
         return error
           ? this.errorComponent
           : show
