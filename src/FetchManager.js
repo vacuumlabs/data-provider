@@ -36,7 +36,6 @@ export class FetchManager {
     }
   }
 
-  // call this using setTimeout(..., 0) ?
   scheduleNotNeededFetch(fnArgs) {
     if (this.neededFetchesInProgress > 0) {
       this.notNeededQueue.push(fnArgs)

@@ -19,7 +19,7 @@ export default class DataProvider {
     this.responseHandler = responseHandler
     this.keepAliveFor = keepAliveFor
     this.loaded = false // keeps track of whether the data has already been fetched
-    this.fetching = false // indicates a fetch in-progress
+    this.fetchingCount = 0 // indicates a number of fetches in-progress
     this.expireTimeout = null // for DPs with keepAlive, it contains timeoutID
     this.hasExpired = false // for DPs with keepAlive, indicates an expired DP
     this.lastFetchId = -1 // ID of a last successful fetch, helps prevent unnecessary scheduled fetches
@@ -92,6 +92,10 @@ export default class DataProvider {
     fm.scheduleFetch(force, needed, this.doFetch.bind(this))
   }
 
+  fetching() {
+    return this.fetchingCount > 0
+  }
+
   /**
    * Fetch calls this.getData() to retrieve data and passes it through resolveHandler and then to this.onData().
    * If there already is a fetch in-progress and another fetch() is called concurrently (e.g. nested DP),
@@ -100,10 +104,10 @@ export default class DataProvider {
    */
   async doFetch(fetchId, force = false) {
     const newerFetchAlreadyFinished = this.lastFetchId > fetchId
-    if (getCanceled(this.id) || (!force && this.fetching) || newerFetchAlreadyFinished) {
+    if (getCanceled(this.id) || (!force && this.fetching()) || newerFetchAlreadyFinished) {
       return
     }
-    this.fetching = true
+    this.fetchingCount++
     if (this.timer) {
       clearTimeout(this.timer)
     }
@@ -118,7 +122,7 @@ export default class DataProvider {
         data = response
       }
     } finally {
-      this.fetching = false
+      this.fetchingCount--
     }
 
     if (!getCanceled(this.id) && data) {
