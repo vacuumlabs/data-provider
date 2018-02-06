@@ -1,5 +1,6 @@
 import React from 'react'
 import {LoadingIcon} from './LoadingIcon'
+import {ABORT} from './DataProvider'
 
 export const cfg = {
   responseHandler: defaultResponseHandler,
@@ -9,12 +10,21 @@ export const cfg = {
 }
 
 function defaultResponseHandler(response) {
-  return response
+  if (!(typeof Response !== 'undefined' && response instanceof Response)) {
+    return response
+  }
+  if (!response.ok) {
+    return ABORT
+  }
+  let contentType = response.headers.get('content-type')
+  if (contentType && contentType.includes('application/json')) {
+    return response.json()
+  }
+  return response.text()
 }
 
 /**
  * Provides a way to set global configuration options for Data Providers
- * @param options
  */
 export function dataProvidersConfig(options) {
   options = Object(options)

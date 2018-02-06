@@ -1,11 +1,12 @@
 import lo from 'lodash'
 import {cfg} from './config'
+import {Promise} from 'bluebird'
 
-export const RETRY = Symbol('RETRY')
+const RETRY = Symbol('RETRY')
 export const ABORT = Symbol('ABORT')
 
 export default class DataProvider {
-  constructor({id, ref, rawOnData, onData, initialData}) {
+  constructor({id, ref, rawOnData, onData, initialData, responseHandler}) {
     this.id = id
     this.ref = ref
     this.rawOnData = rawOnData
@@ -13,6 +14,7 @@ export default class DataProvider {
     this.userConfigs = {}
     this.loaded = false
     this.fetching = false
+    this.responseHandler = responseHandler
 
     if (initialData !== undefined) {
       this.loaded = true
@@ -72,32 +74,25 @@ export default class DataProvider {
     }, this.polling())
   }
 
-  getDataWithRetry() {
-    return new Promise((resolve, reject) => {
-      let lastTimeout
-      let timedGetData = async (retries) => {
-        if (retries < 0) {
-          reject()
-          return
-        }
-        lastTimeout = setTimeout(timedGetData, cfg.fetchTimeout, retries - 1)
-        let data = await this.getData()
-        clearTimeout(lastTimeout)
-        resolve(data)
-      }
-      timedGetData(cfg.maxTimeoutRetries)
-    })
+  async getDataWithRetry(retries, previous = []) {
+    if (retries < 0) {
+      throw new Error(`DataProvider (ref=${this.ref}) has timed out.`)
+    }
+    let timeout = Promise.delay(cfg.fetchTimeout).then(() => RETRY)
+    let getDataCalls = [this.getData(), ...previous]
+    let data = await Promise.race([timeout, ...getDataCalls])
+    return data === RETRY ? this.getDataWithRetry(retries - 1, getDataCalls) : data
   }
 
   /**
    * Fetch calls this.getData() to retrieve data and passes it through resolveHandler and then to this.onData().
-   * If there already is a fetch in-progress and another fetch() is called concurrently,
+   * If there already is a fetch in-progress and another fetch() is called concurrently (e.g. nested DP),
    * it will not trigger another getData call, but it will return immediately - UNLESS
-   * force parameter is set to true
+   * force parameter is set to true (e.g. useful when data change and refetch() is called)
    */
   async fetch(force = false) {
     if (this.canceled() || (!force && this.fetching)) {
-      return null
+      return
     }
     this.fetching = true
     if (this.timer) {
@@ -106,11 +101,9 @@ export default class DataProvider {
 
     let data
     try {
-      const rawResponse = await this.getDataWithRetry()
-      const response = await cfg.responseHandler(rawResponse)
-      if (response === RETRY) {
-        return await this.fetch(true)
-      } else if (response === ABORT) {
+      const rawResponse = await this.getDataWithRetry(cfg.maxTimeoutRetries)
+      const response = await this.responseHandler(rawResponse)
+      if (response === ABORT) {
         data = null
       } else {
         data = response
@@ -124,7 +117,5 @@ export default class DataProvider {
       this.onData(data)
     }
     this.scheduleNextFetch()
-
-    return Promise.resolve()
   }
 }
