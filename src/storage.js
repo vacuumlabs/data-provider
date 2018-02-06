@@ -56,6 +56,7 @@ export function addDataProvider(config) {
 export function addUserConfig(userId, dpId, {needed = true, polling = Infinity, refreshFn}) {
   const dp = dataProviders[dpId]
   const oldPolling = dp.polling()
+  // TODO(TK) use Array as a path. Also, it's used only once so you can inline it to lo.set directly
   const path = `${userId}.${dpId}`
   const isFirst = lo.isEmpty(getUsersForDp(dpId))
 
@@ -68,6 +69,9 @@ export function addUserConfig(userId, dpId, {needed = true, polling = Infinity, 
 export function removeDpUser(dpId, userId) {
   let dp = dataProviders[dpId]
   if (dp.keepAliveFor) {
+    // TODO(TK) disabling user seems strange to me. For me, the semantics of user is 'what is
+    // currently mounted'. I see no reason (but polling, which can be solved easily another way) why
+    // to keep track of not-enabed configs.
     disableUser(dp, userId)
   } else {
     removeUser(dpId, userId)

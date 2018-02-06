@@ -61,6 +61,12 @@ export default class DataProvider {
     return this.expireTimeout != null
   }
 
+  // TODO(TK) I'd prefer if methods which
+  // a) need more than just DataProvider fields to compute
+  // b) do not access DataProviders 'private' fields (fetching, expireTimeout)
+  // were functions in storage.js . So, instead if `dp.polling()` we'd have `polling(dpId)`. Same for
+  // needed, cancelled.
+
   polling() {
     return lo.reduce(getUsersForDp(this.id), (prev, {polling}) => Math.min(polling, prev), Infinity)
   }
