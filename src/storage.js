@@ -99,6 +99,9 @@ export function refetch(dpRef) {
 
 function disableUser(dp, userId) {
   const userCfg = userConfigs[userId][dp.id]
+  if (!userCfg.enabled) {
+    return // already disabled
+  }
   userCfg.enabled = false
   userCfg.refreshFn = null
   const allUsersDisabled = lo.every(getUsersForDp(dp.id), (cfg) => !cfg.enabled)
