@@ -3,6 +3,7 @@ import DataProvider from './DataProvider'
 
 const dataProviders = {}
 const userConfigs = {}
+const keepAlivePollingMap = {}
 
 // queries
 
@@ -45,6 +46,19 @@ export function findDpWithRef(ref) {
   return lo.findKey(dataProviders, (dp) => lo.isEqual(dp.ref, ref))
 }
 
+// returns polling value for given dpId
+export function getPolling(dpId) {
+  return keepAliveDp(dpId) ?
+    keepAlivePolling(dpId) :
+    lo.reduce(getUsersForDp(dpId), (prev, {polling}) => Math.min(polling, prev), Infinity)
+}
+
+// returns canceled status for given dpId
+export function getCanceled(dpId) {
+  const dp = dataProviders[dpId]
+  return !dp || (!keepAliveDp(dpId) && lo.isEmpty(getUsersForDp(dpId))) || dp.expired()
+}
+
 // modifications
 
 // adds new Data Provider
@@ -54,39 +68,31 @@ export function addDataProvider(config) {
 
 // adds new config for given userId - dpId
 export function addUserConfig(userId, dpId, {needed = true, polling = Infinity, refreshFn}) {
-  const dp = dataProviders[dpId]
-  const oldPolling = dp.polling()
-  // TODO(TK) use Array as a path. Also, it's used only once so you can inline it to lo.set directly
-  const path = `${userId}.${dpId}`
-  const isFirst = lo.isEmpty(getUsersForDp(dpId))
+  const oldPolling = getPolling(dpId)
+  const isFirst = lo.isEmpty(getUsersForDp(dpId)) && !dataProviders[dpId].suspended()
 
-  lo.set(userConfigs, path, {needed, polling, enabled: true, refreshFn})
-  removeDisabledUserConfigs(dpId)
+  lo.set(userConfigs, [userId, dpId], {needed, polling, refreshFn})
+  if (keepAliveDp(dpId)) {
+    keepAlivePollingMap[dpId] = Math.min(polling, keepAlivePolling(dpId))
+  }
   dataProviders[dpId].updateUser(isFirst, oldPolling)
 }
 
 // based on Data Provider settings, it either removes or disables user config with given userId
 export function removeDpUser(dpId, userId) {
-  let dp = dataProviders[dpId]
-  if (dp.keepAliveFor) {
-    // TODO(TK) disabling user seems strange to me. For me, the semantics of user is 'what is
-    // currently mounted'. I see no reason (but polling, which can be solved easily another way) why
-    // to keep track of not-enabed configs.
-    disableUser(dp, userId)
-  } else {
-    removeUser(dpId, userId)
-    removeDpIfNotUsed(dpId)
+  removeUser(dpId, userId)
+  if (lo.isEmpty(getUsersForDp(dpId))) {
+    if (keepAliveDp(dpId)) {
+      dataProviders[dpId].suspend()
+    } else {
+      removeDataProvider(dpId)
+    }
   }
 }
 
-// removes all user configs and data provider itself, when it expires
+// removes the data provider from repository, when it expires
 export function dataProviderExpired(dpId) {
-  for (let userId of lo.keys(userConfigs)) {
-    if (lo.has(userConfigs[userId], dpId)) {
-      removeUser(dpId, userId)
-    }
-  }
-  removeDpIfNotUsed(dpId)
+  removeDataProvider(dpId)
 }
 
 // triggers fetch() on a Data Provider with given ref
@@ -101,19 +107,6 @@ export function refetch(dpRef) {
 
 // internal
 
-function disableUser(dp, userId) {
-  const userCfg = userConfigs[userId][dp.id]
-  if (!userCfg.enabled) {
-    return // already disabled
-  }
-  userCfg.enabled = false
-  userCfg.refreshFn = null
-  const allUsersDisabled = lo.every(getUsersForDp(dp.id), (cfg) => !cfg.enabled)
-  if (allUsersDisabled) {
-    dp.suspend()
-  }
-}
-
 function removeUser(dpId, userId) {
   delete userConfigs[userId][dpId]
   if (lo.isEmpty(userConfigs[userId])) {
@@ -121,16 +114,15 @@ function removeUser(dpId, userId) {
   }
 }
 
-function removeDpIfNotUsed(dpId) {
-  if (lo.isEmpty(getUsersForDp(dpId))) {
-    delete dataProviders[dpId]
-  }
+function removeDataProvider(dpId) {
+  delete dataProviders[dpId]
+  delete keepAlivePollingMap[dpId]
 }
 
-function removeDisabledUserConfigs(dpId) {
-  for (let userId of lo.keys(userConfigs)) {
-    if (lo.has(userConfigs[userId], dpId) && !userConfigs[userId][dpId].enabled) {
-      removeUser(dpId, userId)
-    }
-  }
+function keepAlivePolling(dpId) {
+  return keepAlivePollingMap[dpId] || Infinity
+}
+
+function keepAliveDp(dpId) {
+  return dataProviders[dpId] && dataProviders[dpId].keepAliveFor > 0
 }

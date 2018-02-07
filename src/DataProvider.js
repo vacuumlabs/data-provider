@@ -1,7 +1,6 @@
-import lo from 'lodash'
 import {cfg} from './config'
 import {Promise} from 'bluebird'
-import {dataProviderExpired, getUsersForDp} from './storage'
+import {dataProviderExpired, getUsersForDp, getPolling, getCanceled} from './storage'
 
 const RETRY = Symbol('RETRY')
 export const ABORT = Symbol('ABORT')
@@ -37,7 +36,7 @@ export default class DataProvider {
     clearTimeout(this.expireTimeout)
     this.expireTimeout = null
 
-    if (this.polling() < oldDpPolling) {
+    if (getPolling(this.id) < oldDpPolling) {
       needFetch = true
     }
 
@@ -61,37 +60,18 @@ export default class DataProvider {
     return this.expireTimeout != null
   }
 
-  // TODO(TK) I'd prefer if methods which
-  // a) need more than just DataProvider fields to compute
-  // b) do not access DataProviders 'private' fields (fetching, expireTimeout)
-  // were functions in storage.js . So, instead if `dp.polling()` we'd have `polling(dpId)`. Same for
-  // needed, cancelled.
-
-  polling() {
-    return lo.reduce(getUsersForDp(this.id), (prev, {polling}) => Math.min(polling, prev), Infinity)
-  }
-
-  needed() {
-    return lo.some(getUsersForDp(this.id), ({needed}) => needed)
-  }
-
   expired() {
     return this.hasExpired
   }
 
-  canceled() {
-    return this.keepAliveFor <= 0 && lo.isEmpty(getUsersForDp(this.id))
-      || this.expired()
-  }
-
   scheduleNextFetch() {
-    if (this.polling() === Infinity) {
+    if (getPolling(this.id) === Infinity) {
       return
     }
 
     this.timer = setTimeout(() => {
       this.fetch()
-    }, this.polling())
+    }, getPolling(this.id))
   }
 
   async getDataWithRetry(retries, previous = []) {
@@ -111,7 +91,7 @@ export default class DataProvider {
    * force parameter is set to true (e.g. useful when data change and refetch() is called)
    */
   async fetch(force = false) {
-    if (this.canceled() || (!force && this.fetching)) {
+    if (getCanceled(this.id) || (!force && this.fetching)) {
       return
     }
     this.fetching = true
@@ -132,7 +112,7 @@ export default class DataProvider {
       this.fetching = false
     }
 
-    if (!this.canceled() && data) {
+    if (!getCanceled(this.id) && data) {
       this.loaded = true
       this.onData(data)
       this.refreshComponents()

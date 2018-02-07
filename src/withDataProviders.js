@@ -100,8 +100,7 @@ export function withDataProviders(getConfig) {
               onData: (data) => call(rawOnData)(ref, data, this.context.dispatch),
               initialData,
               responseHandler,
-              keepAliveFor,
-              componentRefresh: this.forceUpdate.bind(this)
+              keepAliveFor
             })
           }
 
@@ -140,8 +139,8 @@ export function withDataProviders(getConfig) {
       }
 
       render() {
-        let show = lo.entries(getAllUserConfigs(this.id)).every(([dpId, {enabled, needed}]) => {
-          return !needed || !enabled || getDataProvider(dpId).loaded
+        let show = lo.entries(getAllUserConfigs(this.id)).every(([dpId, {needed}]) => {
+          return !needed || getDataProvider(dpId).loaded
         })
         return show ? <Component {...this.props} /> : this.loadingIcon
       }
