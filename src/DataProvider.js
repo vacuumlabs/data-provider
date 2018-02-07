@@ -24,9 +24,11 @@ export default class DataProvider {
 
   updateUser(userId, {polling=Infinity, needed=true, rawGetData, getData}) {
     let needFetch = false
+    let forceFetch = false
 
     if (rawGetData != null && !lo.isEqual(rawGetData, this.rawGetData)) {
       needFetch = true
+      forceFetch = true
       this.rawGetData = rawGetData
       this.getData = getData
       this.loaded = false
@@ -44,7 +46,7 @@ export default class DataProvider {
     }
 
     if (needFetch) {
-      this.fetch()
+      this.fetch(forceFetch)
     }
   }
 
@@ -70,7 +72,7 @@ export default class DataProvider {
     }
 
     this.timer = setTimeout(() => {
-      this.fetch()
+      this.fetch(false)
     }, this.polling())
   }
 
