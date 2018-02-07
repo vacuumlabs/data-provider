@@ -1,4 +1,4 @@
-import {postData, messageData} from './actions'
+import {postData, messageData, articleData} from './actions'
 import {failingGetDataWithResponse, getData, getDataWithCount} from './getData'
 
 const updatePost = (exampleId) => (ref, data, dispatch) => {
@@ -44,4 +44,16 @@ export const refetchProvider = (exampleId) => ({
   getData: [getDataWithCount, {body: 'Hello world'}, exampleId, 2000],
   onData: [updateMessage, exampleId],
   needed: true
+})
+
+const updateArticleBody = (exampleId, articleId) => (ref, data, dispatch) => {
+  dispatch(articleData(data, ref, exampleId, articleId))
+}
+
+export const articleProvider = (articleId, exampleId) => ({
+  ref: ['articleId', articleId],
+  getData: [getData, {body: `Article #${articleId}`}, 2000],
+  onData: [updateArticleBody, exampleId, articleId],
+  needed: true,
+  keepAliveFor: 30 * 1000
 })

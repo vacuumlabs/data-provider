@@ -5,6 +5,7 @@ import {SingleDataProviderExample} from './SingleProviderExample'
 import {PollingExample} from './PollingExample'
 import {RefetchExample} from './RefetchExample'
 import {PollingKeepAliveExample} from './PollingKeepAliveExample'
+import {ArticleExample} from './ArticleExample'
 
 const Home = () => (<div><p>Choose an example</p></div>)
 
@@ -33,6 +34,11 @@ const exampleRoutes = [
     path: '/pollingKeepAlive',
     component: PollingKeepAliveExample,
     title: 'Polling With Keep Alive'
+  },
+  {
+    path: '/articles',
+    component: ArticleExample,
+    title: 'Articles (1 component with parametric data providers)'
   },
 ]
 
