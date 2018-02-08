@@ -1,12 +1,10 @@
 import {cfg} from './config'
 import {Promise} from 'bluebird'
 import {dataProviderExpired, getUsersForDp, getPolling, getCanceled} from './storage'
-import {FetchManager} from './FetchManager'
+import {scheduleFetch} from './fetchScheduler'
 
 const RETRY = Symbol('RETRY')
 export const ABORT = Symbol('ABORT')
-
-const fm = new FetchManager()
 
 export default class DataProvider {
   constructor({id, ref, rawGetData, getData, rawOnData, onData, initialData, responseHandler, keepAliveFor = 0}) {
@@ -89,7 +87,7 @@ export default class DataProvider {
   }
 
   fetch(force, needed) {
-    fm.scheduleFetch(force, needed, this.doFetch.bind(this))
+    scheduleFetch(force, needed, this.doFetch.bind(this))
   }
 
   fetching() {
