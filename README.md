@@ -10,9 +10,9 @@ The contract:
 * You can count on the data being fetched and handled when writing the code for
   the decorated React component
 
-# Example
+#### Example
 
-```
+```js
 class BlogPost extends React.Component {
   render() {
     let {title, body} = this.props
@@ -57,11 +57,40 @@ compose(
       keepAliveFor: 10 * 60 * 1000,
       // Optionally, the (first) fetch can be skipped by providing initialData (for
       // example, data can be put to html-data-attribute during server-side rendering)
-      initialData: {title: ..., body: ...}
+      initialData: {title: ..., body: ...},
+      // Optionally, override the default responseHandler behavior,
+      // see Global Configuration section for details
+      responseHandler: ...,
+      // Optionally, override the default loading component by defining your own, or 
+      // set it null to disable
+      loadingComponent: <MyLoadingComponent />
     },
     // more data providers...
   ]),
   connect((state, props) => state.blogData[props.blogPostId]))
 )(BlogPost)
 
+```
+
+### Global Configuration
+
+You can override some default settings and behavior by calling the `dataProvidersConfig({...})` function.
+
+Optional overridable settings:
+ * `responseHandler` - function that accepts `response` from user defined `getData()` function and processes it.
+ Default implementation expects a `Response` object (but simply returns `response` otherwise), and tries to parse
+ the body as JSON object.
+ * `loadingComponent` - component to display when DataProvider is fetching data
+ * `fetchTimeout` - time in milliseconds after which a new fetch (user supplied `getData`) is called. Default is 30s
+ * `maxTimeoutRetries` - max number of retries of the `getData` call after timeout. Default is 5
+ 
+#### Example
+
+```js
+dataProvidersConfig({
+  responseHandler: (response) => response,
+  loadingComponent: <MyLoadingComponent />,
+  fetchTimeout: 60 * 1000,
+  maxTimeoutRetries: 1
+})
 ```

@@ -39,7 +39,7 @@ export function withDataProviders(getConfig) {
 
       componentWillMount() {
         this.id = idg.next()
-        this.loadingIcon = cfg.loadingIcon
+        this.loadingComponent = cfg.loadingComponent
         this.handleUpdate(this.props)
       }
 
@@ -67,14 +67,14 @@ export function withDataProviders(getConfig) {
             initialData,
             polling,
             needed,
-            loadingIcon,
+            loadingComponent,
             responseHandler = cfg.responseHandler,
             keepAliveFor = 0
           } = dpConfig
           assert(Number.isInteger(keepAliveFor) && keepAliveFor >= 0,
             'Parameter keepAliveFor must be a positive Integer or 0')
 
-          this.loadingIcon = loadingIcon === undefined ? this.loadingIcon : loadingIcon
+          this.loadingComponent = loadingComponent === undefined ? this.loadingComponent : loadingComponent
 
           let dpId = findDpWithRef(ref)
 
@@ -136,7 +136,7 @@ export function withDataProviders(getConfig) {
         let show = lo.entries(getAllUserConfigs(this.id)).every(([dpId, {needed}]) => {
           return !needed || getDataProvider(dpId).loaded
         })
-        return show ? <Component {...this.props} /> : this.loadingIcon
+        return show ? <Component {...this.props} /> : this.loadingComponent
       }
     }
   }

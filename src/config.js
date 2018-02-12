@@ -1,10 +1,10 @@
 import React from 'react'
-import {LoadingIcon} from './LoadingIcon'
+import {LoadingComponent} from './LoadingComponent'
 import {ABORT} from './DataProvider'
 
 export const cfg = {
   responseHandler: defaultResponseHandler,
-  loadingIcon: <LoadingIcon />,
+  loadingComponent: <LoadingComponent />,
   fetchTimeout: 30 * 1000,
   maxTimeoutRetries: 5
 }
