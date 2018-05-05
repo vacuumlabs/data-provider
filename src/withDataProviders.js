@@ -1,18 +1,12 @@
 import PropTypes from 'prop-types'
 import React from 'react'
 import lo from 'lodash'
-import {assert, IdGenerator} from './util'
+import {assert, call, IdGenerator} from './util'
 import {cfg} from './config'
 import {
   addDataProvider, addUserConfig, findDpWithRef, getAllUserConfigs, getDataProvider, getDPsForUser,
   refetch, removeDpUser
 } from './storage'
-
-function call(list) {
-  let fn = list[0]
-  let args = list.slice(1)
-  return fn(...args)
-}
 
 const idg = new IdGenerator()
 
@@ -45,7 +39,7 @@ export function withDataProviders(getConfig) {
 
       componentWillMount() {
         this.id = idg.next()
-        this.loadingIcon = cfg.loadingIcon
+        this.loadingComponent = cfg.loadingComponent
         this.handleUpdate(this.props)
       }
 
@@ -73,14 +67,14 @@ export function withDataProviders(getConfig) {
             initialData,
             polling,
             needed,
-            loadingIcon,
+            loadingComponent,
             responseHandler = cfg.responseHandler,
             keepAliveFor = 0
           } = dpConfig
           assert(Number.isInteger(keepAliveFor) && keepAliveFor >= 0,
             'Parameter keepAliveFor must be a positive Integer or 0')
 
-          this.loadingIcon = loadingIcon === undefined ? this.loadingIcon : loadingIcon
+          this.loadingComponent = loadingComponent === undefined ? this.loadingComponent : loadingComponent
 
           let dpId = findDpWithRef(ref)
 
@@ -142,7 +136,7 @@ export function withDataProviders(getConfig) {
         let show = lo.entries(getAllUserConfigs(this.id)).every(([dpId, {needed}]) => {
           return !needed || getDataProvider(dpId).loaded
         })
-        return show ? <Component {...this.props} /> : this.loadingIcon
+        return show ? <Component {...this.props} /> : this.loadingComponent
       }
     }
   }

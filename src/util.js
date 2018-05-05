@@ -14,3 +14,9 @@ export class IdGenerator {
     return `#${this.counter}`
   }
 }
+
+export function call(list) {
+  let fn = list[0]
+  let args = list.slice(1)
+  return fn(...args)
+}

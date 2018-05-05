@@ -75,7 +75,7 @@ export function addUserConfig(userId, dpId, {needed = true, polling = Infinity, 
   if (keepAliveDp(dpId)) {
     keepAlivePollingMap[dpId] = Math.min(polling, keepAlivePolling(dpId))
   }
-  dataProviders[dpId].updateUser(isFirst, oldPolling)
+  dataProviders[dpId].updateUser(isFirst, needed, oldPolling)
 }
 
 // based on Data Provider settings, it either removes or disables user config with given userId
@@ -99,7 +99,7 @@ export function dataProviderExpired(dpId) {
 export function refetch(dpRef) {
   for (let dp of lo.values(dataProviders)) {
     if (lo.isEqual(dp.ref, dpRef)) {
-      return dp.fetch(true)
+      return dp.fetch(true, true)
     }
   }
   throw new Error(`No data provider ref=${dpRef}`)
