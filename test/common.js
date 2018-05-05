@@ -33,10 +33,10 @@ class DispatchProvider extends React.Component {
   }
 }
 
-export const newTestApp = () => {
+export const newTestApp = (initialState = {}) => {
   const store = createStore((state, action) => (
     typeof action.reducer === 'function' ? action.reducer(state, action) : state
-  ), {content: ''})
+  ), {content: '', ...initialState})
 
   return {
     app: ({children}) => (
