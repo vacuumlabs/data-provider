@@ -1,8 +1,13 @@
 import PropTypes from 'prop-types'
 import React from 'react'
 import lo from 'lodash'
+<<<<<<< HEAD
 import { assert, call, IdGenerator, defaultOnAbort } from './util'
 import { cfg } from './config'
+=======
+import {assert, call, IdGenerator, emptyDispatch} from './util'
+import {cfg} from './config'
+>>>>>>> 06e35f8... Make store in context optional
 import {
   addDataProvider, addUserConfig, findDpWithRef, getAllUserConfigs, getDataProvider, getDPsForUser,
   refetch, removeDpUser
@@ -34,7 +39,11 @@ export function withDataProviders(getConfig) {
     return class ComponentWithDataProviders extends React.Component {
 
       static contextTypes = {
-        store: PropTypes.object.isRequired,
+        store: PropTypes.object,
+      }
+
+      getDispatch() {
+        return this.context.store && this.context.store.dispatch || emptyDispatch
       }
 
       componentWillMount() {
@@ -96,9 +105,9 @@ export function withDataProviders(getConfig) {
               rawGetData,
               getData: () => call(rawGetData),
               rawOnData,
-              onData: (data) => call(rawOnData)(ref, data, this.context.store.dispatch),
+              onData: (data) => call(rawOnData)(ref, data, this.getDispatch()),
               rawOnAbort,
-              onAbort: (errorData) => call(rawOnAbort)(ref, errorData, this.context.store.dispatch),
+              onAbort: (errorData) => call(rawOnAbort)(ref, errorData, this.getDispatch()),
               initialData,
               responseHandler,
               keepAliveFor

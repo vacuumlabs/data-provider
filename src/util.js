@@ -22,3 +22,6 @@ export function call(list) {
 }
 
 export const defaultOnAbort = [() => () => undefined]
+export function emptyDispatch() {
+  // do nothing
+}
