@@ -197,6 +197,7 @@ test('component with refetch works after unmounting/mounting', async () => {
   const Container = connect((state) => ({show: state.show}))(ShowContainer)
   const {root, store} = renderApp(<Container />, {show: true})
   const toggleShowAction = {type: 'toggle-show', reducer: (state) => ({...state, show: !state.show})}
+  await safeDelay(0)
 
   // turn off show to unmount MessageContainer
   store.dispatch(toggleShowAction)
