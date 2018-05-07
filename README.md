@@ -60,7 +60,7 @@ compose(
       initialData: {title: ..., body: ...},
       // Optionally, override the default responseHandler behavior,
       // see Global Configuration section for details
-      responseHandler: ...,
+      responseHandler: (response, dispatch) => data | ABORT,
       // Optionally, override the default loading component by defining your own, or 
       // set it null to disable
       loadingComponent: <MyLoadingComponent />

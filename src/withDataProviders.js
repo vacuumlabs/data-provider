@@ -93,7 +93,7 @@ export function withDataProviders(getConfig) {
               rawOnData,
               onData: (data) => call(rawOnData)(ref, data, this.context.dispatch),
               initialData,
-              responseHandler,
+              responseHandler: (response) => responseHandler(response, this.context.dispatch),
               keepAliveFor
             })
           }
