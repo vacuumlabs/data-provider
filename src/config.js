@@ -9,7 +9,7 @@ export const cfg = {
   maxTimeoutRetries: 5
 }
 
-function defaultResponseHandler(response) {
+export function defaultResponseHandler(response) {
   if (!(typeof Response !== 'undefined' && response instanceof Response)) {
     return response
   }
