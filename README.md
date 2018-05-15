@@ -82,6 +82,7 @@ Optional overridable settings:
  Default implementation expects a `Response` object (but simply returns `response` otherwise), and tries to parse
  the body as JSON object.
  * `loadingComponent` - component to display when DataProvider is fetching data
+ * `errorComponent` - component to display when DataProvider fails initial fetch or refetch
  * `fetchTimeout` - time in milliseconds after which a new fetch (user supplied `getData`) is called. Default is 30s
  * `maxTimeoutRetries` - max number of retries of the `getData` call after timeout. Default is 5
  
@@ -91,6 +92,7 @@ Optional overridable settings:
 dataProvidersConfig({
   responseHandler: (response) => response,
   loadingComponent: <MyLoadingComponent />,
+  errorComponent: <MyErrorComponent />,
   fetchTimeout: 60 * 1000,
   maxTimeoutRetries: 1
 })

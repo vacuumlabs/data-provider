@@ -130,6 +130,7 @@ export default class DataProvider {
     try {
       const rawResponse = await this.getDataWithRetry(cfg.maxTimeoutRetries)
       const response = await this.responseHandler(rawResponse)
+      // optionally, we allow supplying data to onAbort via modified responseHandler
       if (response === ABORT || (response && response.abort === ABORT)) {
         data = null
         errorData = response && response.data
