@@ -36,6 +36,39 @@ test('withDataProviders (needed=true) renders child component when the data is f
   expectTextContent(renderedMessage).toBe('Hello')
 })
 
+test('withDataProviders (needed=true) renders custom error when it fails (ABORT on response.ABORT)', async () => {
+  dataProvidersConfig({responseHandler: (response) => ({abort: ABORT}), errorComponent: <div>Failed</div>})
+  const {root} = renderMessageContainerApp({needed: true})
+
+  await safeDelay(GET_DATA_DELAY)
+
+  let renderedMessage = root.querySelector('div div')
+  expect(renderedMessage.textContent).toBe('Failed')
+})
+
+test('custom error component in dp setting', async () => {
+  dataProvidersConfig({responseHandler: (response) => ABORT})
+  const {root} = renderMessageContainerApp({needed: true, errorComponent: <div>Failed</div>})
+
+  await safeDelay(GET_DATA_DELAY)
+
+  let renderedMessage = root.querySelector('div div')
+  expect(renderedMessage.textContent).toBe('Failed')
+})
+
+test('onAbort fires on error, works with connected error component', async () => {
+  const ErrorMessageContainer = compose(
+    connect((state) => ({content: state.content})),
+  )(Message)
+  dataProvidersConfig({responseHandler: (response) => ({abort: ABORT}), errorComponent: <ErrorMessageContainer />})
+  const {root} = renderMessageContainerApp({needed: true, onAbort: [updateMessageStaticData, 'Error Data']})
+
+  await safeDelay(GET_DATA_DELAY)
+
+  let renderedMessage = root.querySelector('div.message')
+  expect(renderedMessage.textContent).toBe('Error Data')
+})
+
 test('withDataProviders (needed=false) renders initial state of child component', async () => {
   const {root} = renderMessageContainerApp({needed: false, initialData: {data: 'init'}})
 
@@ -47,38 +80,44 @@ test('withDataProviders (needed=false) renders initial state of child component'
   expectTextContent(renderedMessage).toBe('Hello')
 })
 
-test('nested withDataProviders with eager prefetching - child component is rendered ' +
-  'after data is fetched and getData was called only once', async () => {
-  const getData = [getDataWithCount, {data: ''}, GET_DATA_DELAY]
-  const MessageContainer = messageContainer({needed: true, getData, initialData: {show: false}})
-  const ParentContainer = ({show}) => show ? <MessageContainer /> : null
-  const Container = compose(
-    connect((state) => ({show: state.show})),
-    withDataProviders(() => [messageProvider({needed: false, getData})]),
-  )(ParentContainer)
-  const {root, store} = renderApp(<Container />)
+test(
+  'nested withDataProviders with eager prefetching - child component is rendered ' +
+  'after data is fetched and getData was called only once',
+  async () => {
+    const getData = [getDataWithCount, {data: ''}, GET_DATA_DELAY]
+    const MessageContainer = messageContainer({needed: true, getData, initialData: {show: false}})
+    const ParentContainer = ({show}) => (show ? <MessageContainer /> : null)
+    const Container = compose(
+      connect((state) => ({show: state.show})),
+      withDataProviders(() => [messageProvider({needed: false, getData})])
+    )(ParentContainer)
+    const {root, store} = renderApp(<Container />)
 
-  await safeDelay(GET_DATA_DELAY)
-  store.dispatch({type: 'toggle-show', reducer: (state) => ({...state, show: !state.show})})
+    await safeDelay(GET_DATA_DELAY)
+    store.dispatch({type: 'toggle-show', reducer: (state) => ({...state, show: !state.show})})
 
-  let renderedMessage = root.querySelector('div.message')
-  expectTextContent(renderedMessage).toBe('1')
-})
+    let renderedMessage = root.querySelector('div.message')
+    expectTextContent(renderedMessage).toBe('1')
+  }
+)
 
-test('nested withDataProviders with eager prefetching - child component is rendered immediately, but ' +
-  'getData is called only once', async () => {
-  const getData = [getDataWithCount, {data: ''}, GET_DATA_DELAY]
-  const MessageContainer = messageContainer({needed: true, getData})
-  const Container = compose(
-    withDataProviders(() => [messageProvider({needed: false, getData})]),
-  )(MessageContainer)
-  const {root} = renderApp(<Container />)
+test(
+  'nested withDataProviders with eager prefetching - child component is rendered immediately, but ' +
+  'getData is called only once',
+  async () => {
+    const getData = [getDataWithCount, {data: ''}, GET_DATA_DELAY]
+    const MessageContainer = messageContainer({needed: true, getData})
+    const Container = compose(withDataProviders(() => [messageProvider({needed: false, getData})]))(
+      MessageContainer
+    )
+    const {root} = renderApp(<Container />)
 
-  await safeDelay(GET_DATA_DELAY)
+    await safeDelay(GET_DATA_DELAY)
 
-  let renderedMessage = root.querySelector('div.message')
-  expectTextContent(renderedMessage).toBe('1')
-})
+    let renderedMessage = root.querySelector('div.message')
+    expectTextContent(renderedMessage).toBe('1')
+  }
+)
 
 test('withDataProviders polling', async () => {
   const POLLING_DELAY = 0.2 * 1000
@@ -189,11 +228,7 @@ test('component with refetch works after unmounting/mounting', async () => {
     withDataProviders(() => [messageProvider({ref: 'refetch', getData})]),
     connect((state) => ({content: state.content})),
   )(RefetchContainer)
-  const ShowContainer = ({show}) => (
-    <div>
-      {show ? <MessageContainer /> : null}
-    </div>
-  )
+  const ShowContainer = ({show}) => <div>{show ? <MessageContainer /> : null}</div>
   const Container = connect((state) => ({show: state.show}))(ShowContainer)
   const {root, store} = renderApp(<Container />, {show: true})
   const toggleShowAction = {type: 'toggle-show', reducer: (state) => ({...state, show: !state.show})}
@@ -211,6 +246,71 @@ test('component with refetch works after unmounting/mounting', async () => {
   let renderedMessage = root.querySelector('div.message')
   expect(renderedMessage).not.toBeNull()
   expect(renderedMessage.textContent).toBe('3') // 1st init call, 2nd on remount, 3rd on refetch
+})
+
+test('failed polling should keep old data', async () => {
+  let alreadyHaveData
+  dataProvidersConfig({
+    responseHandler: (response) => {
+      if (alreadyHaveData) {
+        return ABORT
+      }
+      alreadyHaveData = true
+      return response
+    }
+  })
+  const {root} = renderMessageContainerApp({
+    getData: [getData, {data: 'hello'}],
+    polling: 100
+  })
+
+  await safeDelay(500)
+  let renderedMessage = root.querySelector('div.message p')
+  expectTextContent(renderedMessage).toBe('hello')
+})
+
+test('failing refetch should delete component data', async () => {
+  let alreadyHaveData
+  dataProvidersConfig({
+    responseHandler: (response) => {
+      if (alreadyHaveData) {
+        return ABORT
+      }
+      alreadyHaveData = true
+      return response
+    }
+  })
+
+  const RefetchContainer = ({refetch, content}) => (
+    <div>
+      <Message content={content} />
+      <button onClick={() => refetch('refetch')} />
+    </div>
+  )
+  const MessageContainer = compose(
+    withRefetch(),
+    withDataProviders(() => [
+      {
+        ref: 'refetch',
+        getData: [getData, {data: 'hello'}],
+        onData: [updateMessage],
+        needed: true
+      }
+    ]),
+    connect((state) => ({content: state.content}))
+  )(RefetchContainer)
+  const {root} = renderApp(<MessageContainer />, {show: true})
+
+  await safeDelay(GET_DATA_DELAY)
+
+  let renderedMessage = root.querySelector('div.message')
+  expect(renderedMessage.textContent).toBe('hello')
+  ReactTestUtils.Simulate.click(root.querySelector('button'))
+
+  await safeDelay(GET_DATA_DELAY)
+
+  renderedMessage = root.querySelector('div div')
+  expect(renderedMessage.textContent).toBe('Failed to load data')
 })
 
 // common functions, components
@@ -239,6 +339,12 @@ function updateMessageAction(data) {
 function updateMessage() {
   return (ref, data, dispatch) => {
     dispatch(updateMessageAction(data.data))
+  }
+}
+
+function updateMessageStaticData(data) {
+  return (ref, _, dispatch) => {
+    dispatch(updateMessageAction(data))
   }
 }
 

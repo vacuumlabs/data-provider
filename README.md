@@ -61,9 +61,10 @@ compose(
       // Optionally, override the default responseHandler behavior,
       // see Global Configuration section for details
       responseHandler: ...,
-      // Optionally, override the default loading component by defining your own, or 
+      // Optionally, override the default loading or error component by defining your own, or 
       // set it null to disable
-      loadingComponent: <MyLoadingComponent />
+      loadingComponent: <MyLoadingComponent />,
+      errorComponent: <MyErrorComponent />
     },
     // more data providers...
   ]),
