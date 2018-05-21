@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types'
 import React from 'react'
 import lo from 'lodash'
-import {assert, call, IdGenerator} from './util'
+import {assert, call, IdGenerator, defaultOnAbort} from './util'
 import {cfg} from './config'
 import {
   addDataProvider, addUserConfig, findDpWithRef, getAllUserConfigs, getDataProvider, getDPsForUser,
@@ -40,6 +40,7 @@ export function withDataProviders(getConfig) {
       componentWillMount() {
         this.id = idg.next()
         this.loadingComponent = cfg.loadingComponent
+        this.errorComponent = cfg.errorComponent
         this.handleUpdate(this.props)
       }
 
@@ -64,10 +65,12 @@ export function withDataProviders(getConfig) {
             ref,
             getData: rawGetData,
             onData: rawOnData,
+            onAbort: rawOnAbort = defaultOnAbort,
             initialData,
             polling,
             needed,
             loadingComponent,
+            errorComponent,
             responseHandler = cfg.responseHandler,
             keepAliveFor = 0
           } = dpConfig
@@ -75,6 +78,7 @@ export function withDataProviders(getConfig) {
             'Parameter keepAliveFor must be a positive Integer or 0')
 
           this.loadingComponent = loadingComponent === undefined ? this.loadingComponent : loadingComponent
+          this.errorComponent = errorComponent === undefined ? this.errorComponent : errorComponent
 
           let dpId = findDpWithRef(ref)
 
@@ -92,6 +96,8 @@ export function withDataProviders(getConfig) {
               getData: () => call(rawGetData),
               rawOnData,
               onData: (data) => call(rawOnData)(ref, data, this.context.dispatch),
+              rawOnAbort,
+              onAbort: (errorData) => call(rawOnAbort)(ref, errorData, this.context.dispatch),
               initialData,
               responseHandler,
               keepAliveFor
@@ -115,6 +121,12 @@ export function withDataProviders(getConfig) {
             `is not equal to previous getData\n${dp.rawGetData}`
           )
 
+          assert(
+            (rawOnAbort == null && dp.rawOnAbort == null) || lo.isEqual(rawOnAbort, dp.rawOnAbort),
+            `Provided onAbort for DP ${ref}\n${rawOnAbort}\n` +
+            `is not equal to previous onAbort\n${dp.rawOnAbort}`
+          )
+
           addUserConfig(this.id, dpId, {
             needed,
             polling,
@@ -133,10 +145,15 @@ export function withDataProviders(getConfig) {
       }
 
       render() {
-        let show = lo.entries(getAllUserConfigs(this.id)).every(([dpId, {needed}]) => {
-          return !needed || getDataProvider(dpId).loaded
-        })
-        return show ? <Component {...this.props} /> : this.loadingComponent
+        const {show, error} = lo.entries(getAllUserConfigs(this.id)).reduce(({show, error}, [dpId, {needed}]) => ({
+          show: show && (!needed || getDataProvider(dpId).loaded),
+          error: error || (needed && getDataProvider(dpId).error)
+        }), {show: true, error: false})
+        return error
+          ? this.errorComponent
+          : show
+            ? <Component {...this.props} />
+            : this.loadingComponent
       }
     }
   }

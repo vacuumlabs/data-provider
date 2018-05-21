@@ -20,3 +20,5 @@ export function call(list) {
   let args = list.slice(1)
   return fn(...args)
 }
+
+export const defaultOnAbort = [() => () => undefined]

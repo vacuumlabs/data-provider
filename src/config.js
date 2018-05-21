@@ -1,10 +1,12 @@
 import React from 'react'
 import {LoadingComponent} from './LoadingComponent'
+import {ErrorComponent} from './ErrorComponent'
 import {ABORT} from './DataProvider'
 
 export const cfg = {
   responseHandler: defaultResponseHandler,
   loadingComponent: <LoadingComponent />,
+  errorComponent: <ErrorComponent />,
   fetchTimeout: 30 * 1000,
   maxTimeoutRetries: 5
 }

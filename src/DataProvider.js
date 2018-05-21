@@ -7,16 +7,31 @@ const RETRY = Symbol('RETRY')
 export const ABORT = Symbol('ABORT')
 
 export default class DataProvider {
-  constructor({id, ref, rawGetData, getData, rawOnData, onData, initialData, responseHandler, keepAliveFor = 0}) {
+  constructor({
+    id,
+    ref,
+    rawGetData,
+    getData,
+    rawOnData,
+    onData,
+    rawOnAbort,
+    onAbort,
+    initialData,
+    responseHandler,
+    keepAliveFor = 0
+  }) {
     this.id = id
     this.ref = ref
     this.rawGetData = rawGetData
     this.getData = getData
     this.rawOnData = rawOnData
     this.onData = onData
+    this.rawOnAbort = rawOnAbort
+    this.onAbort = onAbort
     this.responseHandler = responseHandler
     this.keepAliveFor = keepAliveFor
     this.loaded = false // keeps track of whether the data has already been fetched
+    this.error = false // if we couldn't get any data upon mount or refetch
     this.fetchingCount = 0 // indicates a number of fetches in-progress
     this.expireTimeout = null // for DPs with keepAlive, it contains timeoutID
     this.hasExpired = false // for DPs with keepAlive, indicates an expired DP
@@ -111,11 +126,14 @@ export default class DataProvider {
     }
 
     let data
+    let errorData
     try {
       const rawResponse = await this.getDataWithRetry(cfg.maxTimeoutRetries)
       const response = await this.responseHandler(rawResponse)
-      if (response === ABORT) {
+      // optionally, we allow supplying data to onAbort via modified responseHandler
+      if (response === ABORT || (response && response.abort === ABORT)) {
         data = null
+        errorData = response && response.data
       } else {
         data = response
       }
@@ -123,11 +141,20 @@ export default class DataProvider {
       this.fetchingCount--
     }
 
-    if (!getCanceled(this.id) && data) {
-      this.loaded = true
-      this.lastFetchId = fetchId
-      this.onData(data)
-      this.refreshComponents()
+    if (!getCanceled(this.id)) {
+      if (data) {
+        this.loaded = true
+        this.error = false
+        this.lastFetchId = fetchId
+        this.onData(data)
+        this.refreshComponents()
+        // so far force is used only in refetch
+      } else if (force || !this.loaded) {
+        this.loaded = false
+        this.error = true
+        this.onAbort(errorData)
+        this.refreshComponents()
+      }
     }
     this.scheduleNextFetch()
   }
