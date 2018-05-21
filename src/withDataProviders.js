@@ -121,6 +121,12 @@ export function withDataProviders(getConfig) {
             `is not equal to previous getData\n${dp.rawGetData}`
           )
 
+          assert(
+            (rawOnAbort == null && dp.rawOnAbort == null) || lo.isEqual(rawOnAbort, dp.rawOnAbort),
+            `Provided onAbort for DP ${ref}\n${rawOnAbort}\n` +
+            `is not equal to previous onAbort\n${dp.rawOnAbort}`
+          )
+
           addUserConfig(this.id, dpId, {
             needed,
             polling,
