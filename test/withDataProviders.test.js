@@ -143,6 +143,27 @@ test('withDataProviders polling', async () => {
   expect(secondCount).toBe(firstCount + 1)
 })
 
+test('withDataProviders should show loading when (injectLoading=true) and (needed=false)', () => {
+  const {root} = renderMessageContainerApp({needed: false, injectLoading: true})
+
+  let renderedMessage = root.querySelector('div.message span.loading')
+  expect(renderedMessage).not.toBeNull()
+})
+
+test('withDataProviders should not show loading when injectLoading is not set', () => {
+  const {root} = renderMessageContainerApp({needed: false})
+
+  let renderedMessage = root.querySelector('div.message span.loading')
+  expect(renderedMessage).toBeNull()
+})
+
+test('withDataProviders should not show loading when injectLoading is set but (needed=true)', () => {
+  const {root} = renderMessageContainerApp({needed: true, injectLoading: true})
+
+  let renderedMessage = root.querySelector('div.message span.loading')
+  expect(renderedMessage).toBeNull()
+})
+
 test('DataProvider aborts after receiving ABORT from responseHandler', async () => {
   let failCount = 0
   dataProvidersConfig({responseHandler: (response) => (failCount++ < 1 ? ABORT : response)})
@@ -358,10 +379,11 @@ function messageProvider(dpSettings) {
   }
 }
 
-function Message({content}) {
+function Message({content, dataProviderLoading}) {
   return (
     <div className="message">
       <p>{content}</p>
+      {dataProviderLoading && <span className="loading" />}
     </div>
   )
 }
