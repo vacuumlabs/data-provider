@@ -67,11 +67,12 @@ export function addDataProvider(config) {
 }
 
 // adds new config for given userId - dpId
-export function addUserConfig(userId, dpId, {needed = true, polling = Infinity, refreshFn}) {
+export function addUserConfig(userId, dpId, {needed = true, polling = Infinity, injectLoading = false,
+  refreshFn}) {
   const oldPolling = getPolling(dpId)
   const isFirst = lo.isEmpty(getUsersForDp(dpId)) && !dataProviders[dpId].suspended()
 
-  lo.set(userConfigs, [userId, dpId], {needed, polling, refreshFn})
+  lo.set(userConfigs, [userId, dpId], {needed, polling, injectLoading, refreshFn})
   if (keepAliveDp(dpId)) {
     keepAlivePollingMap[dpId] = Math.min(polling, keepAlivePolling(dpId))
   }

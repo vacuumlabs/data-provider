@@ -69,6 +69,7 @@ export function withDataProviders(getConfig) {
             initialData,
             polling,
             needed,
+            injectLoading,
             loadingComponent,
             errorComponent,
             responseHandler = cfg.responseHandler,
@@ -130,6 +131,7 @@ export function withDataProviders(getConfig) {
           addUserConfig(this.id, dpId, {
             needed,
             polling,
+            injectLoading,
             refreshFn: this.forceUpdate.bind(this)
           })
           newDataProviders[dpId] = dp.ref
@@ -145,14 +147,17 @@ export function withDataProviders(getConfig) {
       }
 
       render() {
-        const {show, error} = lo.entries(getAllUserConfigs(this.id)).reduce(({show, error}, [dpId, {needed}]) => ({
+        const {show, error, fetching} = lo.entries(getAllUserConfigs(this.id)).reduce(({show, error, fetching},
+          [dpId, {needed, injectLoading}]) => ({
           show: show && (!needed || getDataProvider(dpId).loaded),
-          error: error || (needed && getDataProvider(dpId).error)
-        }), {show: true, error: false})
+          error: error || (needed && getDataProvider(dpId).error),
+          fetching: fetching || (!needed && !getDataProvider(dpId).loaded && injectLoading),
+        }), {show: true, error: false, fetching: false})
+        const injectedProps = fetching ? {dataProviderLoading: fetching} : {}
         return error
           ? this.errorComponent
           : show
-            ? <Component {...this.props} />
+            ? <Component {...this.props} {...injectedProps} />
             : this.loadingComponent
       }
     }
