@@ -1,13 +1,8 @@
 import PropTypes from 'prop-types'
 import React from 'react'
 import lo from 'lodash'
-<<<<<<< HEAD
-import { assert, call, IdGenerator, defaultOnAbort } from './util'
+import { assert, call, IdGenerator, defaultOnAbort, emptyDispatch } from './util'
 import { cfg } from './config'
-=======
-import {assert, call, IdGenerator, emptyDispatch} from './util'
-import {cfg} from './config'
->>>>>>> 06e35f8... Make store in context optional
 import {
   addDataProvider, addUserConfig, findDpWithRef, getAllUserConfigs, getDataProvider, getDPsForUser,
   refetch, removeDpUser
@@ -43,7 +38,7 @@ export function withDataProviders(getConfig) {
       }
 
       getDispatch() {
-        return this.context.store && this.context.store.dispatch || emptyDispatch
+        return this.context.store && this.context.store.dispatch || undefined
       }
 
       componentWillMount() {
