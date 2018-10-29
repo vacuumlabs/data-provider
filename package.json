@@ -1,6 +1,6 @@
 {
   "name": "data-provider",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Library that helps with server-to-client synchronization of data",
   "main": "dist/index.js",
   "scripts": {
