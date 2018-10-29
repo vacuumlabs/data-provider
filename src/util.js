@@ -15,10 +15,14 @@ export class IdGenerator {
   }
 }
 
-export function call(list) {
-  let fn = list[0]
-  let args = list.slice(1)
-  return fn(...args)
+export function call(listOrFunction) {
+  if (listOrFunction instanceof Function) {
+    return listOrFunction()
+  } else {
+    let fn = listOrFunction[0]
+    let args = listOrFunction.slice(1)
+    return fn(...args)
+  }
 }
 
 export const defaultOnAbort = [() => () => undefined]

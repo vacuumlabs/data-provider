@@ -114,20 +114,20 @@ export function withDataProviders(getConfig) {
           // Changing onData for existing data provider is not currently
           // supported
           assert(
-            rawOnData == null || lo.isEqual(rawOnData, dp.rawOnData),
+            rawOnData == null || rawOnData instanceof Function || lo.isEqual(rawOnData, dp.rawOnData),
             `Provided onData for DP ${ref}\n${rawOnData}\n` +
             `is not equal to previous onData\n${dp.rawOnData}`
           )
 
           // Changing getData for existing data provider is not currently supported
           assert(
-            rawGetData == null || lo.isEqual(rawGetData, dp.rawGetData),
+            rawGetData == null || rawGetData instanceof Function || lo.isEqual(rawGetData, dp.rawGetData),
             `Provided getData for DP ${ref}\n${rawGetData}\n` +
             `is not equal to previous getData\n${dp.rawGetData}`
           )
 
           assert(
-            (rawOnAbort == null && dp.rawOnAbort == null) || lo.isEqual(rawOnAbort, dp.rawOnAbort),
+            (rawOnAbort == null && dp.rawOnAbort == null) || rawOnAbort instanceof Function || lo.isEqual(rawOnAbort, dp.rawOnAbort),
             `Provided onAbort for DP ${ref}\n${rawOnAbort}\n` +
             `is not equal to previous onAbort\n${dp.rawOnAbort}`
           )
