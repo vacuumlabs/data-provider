@@ -1,4 +1,5 @@
-# Data Provider
+![alt text](dataproviders.png "Logo Title Text 1")
+
 
 Library that helps with server-to-client synchronization of data. Depends on
 React, plays well with Redux.
@@ -7,8 +8,9 @@ The contract:
 
 * Decorate your React component, provide config where you specify how to get
   data and what to do with it (e.g. dispatch to app state)
-* You can count on the data being fetched and handled when writing the code for
-  the decorated React component
+* You can count on the data being available as the decorated component renders
+
+The example should get you going - detailed API docs pending :).
 
 #### Example
 
@@ -40,12 +42,11 @@ compose(
       // and should depend on the same parameters as getData / onData do
       ref: ['blog-post', props.blogPostId],
       // Possibly async (promise-returning) function how to fetch data.
-      // Expressed in clojure-like fashion, i.e. [fn, arg1, arg2, ...]
-      getData: [fetch, `/api/blog-post/${props.blogPostId}`],
-      // What to do with obtained data. onData [fn, arg1, arg2] means that
-      // fn(arg1, arg2)(ref, data, dispatch) will be called. Dispatch is taken from
-      // context, which is the case if you are using this with redux and react-redux.
-      onData: [updateBlogPost, props.blogPostId],
+      // Optionally can be expressed in clojure-like fashion, i.e. [fn, arg1, arg2, ...]
+      getData: () => fetch(`/api/blog-post/${props.blogPostId}`),
+      // What to do with obtained data. Dispatch is taken from context,
+      // which is the case if you are using this with redux and react-redux.
+      onData: (ref, data, dispatch) => updateBlogPost(props.blogPostId),
       // How often to refetch data, in milliseconds
       polling: 10 * 60 * 1000,
       // The component is not rendered until data is fetched.
