@@ -98,11 +98,15 @@ export function withDataProviders(getConfig) {
                     id: dpId,
                     ref,
                     rawGetData,
-                    getData: () => call(rawGetData),
+                    getData: rawGetData instanceof Function ? rawGetData : () => call(rawGetData),
                     rawOnData,
-                    onData: (data) => call(rawOnData)(ref, data, this.getDispatch()),
+                    onData: (data) => rawOnData instanceof Function
+                      ? rawOnData(ref, data, this.getDispatch())
+                      : call(rawOnData)(ref, data, this.getDispatch()),
                     rawOnAbort,
-                    onAbort: (errorData) => call(rawOnAbort)(ref, errorData, this.getDispatch()),
+                    onAbort: (errorData) => rawOnAbort instanceof Function
+                      ? rawOnAbort(ref, errorData, this.getDispatch())
+                      : call(rawOnAbort)(ref, errorData, this.getDispatch()),
                     initialData,
                     responseHandler,
                     keepAliveFor

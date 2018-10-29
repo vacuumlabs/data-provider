@@ -24,8 +24,9 @@ afterEach(() => {
   }
 })
 
-test('withDataProviders (needed=true) renders child component when the data is fetched', async () => {
-  const {root} = renderMessageContainerApp({needed: true})
+test('withDataProviders (needed=true) renders child component when the data is fetched'
+  + ' - onData passed as function', async () => {
+  const {root} = renderMessageContainerApp({needed: true}, true)
 
   let renderedMessage = root.querySelector('div.message p')
   expect(renderedMessage).toBeNull()
@@ -36,8 +37,8 @@ test('withDataProviders (needed=true) renders child component when the data is f
   expectTextContent(renderedMessage).toBe('Hello')
 })
 
-test('withDataProviders (needed=true) renders child component when the data is fetched - onData passed as function', async () => {
-  const {root} = renderMessageContainerApp({needed: true}, true)
+test('withDataProviders (needed=true) renders child component when the data is fetched', async () => {
+  const {root} = renderMessageContainerApp({needed: true})
 
   let renderedMessage = root.querySelector('div.message p')
   expect(renderedMessage).toBeNull()
@@ -419,7 +420,7 @@ function fnMessageProvider(dpSettings) {
   return {
     ref: 'message',
     getData: () => getData({data: 'Hello'}),
-    onData: (...params) => updateMessage(...params),
+    onData: (ref, data, dispatch) => dispatch(updateMessageAction(data.data)),
     needed: false,
     ...dpSettings
   }
