@@ -36,6 +36,18 @@ test('withDataProviders (needed=true) renders child component when the data is f
   expectTextContent(renderedMessage).toBe('Hello')
 })
 
+test('withDataProviders (needed=true) renders child component when the data is fetched - onData passed as function', async () => {
+  const {root} = renderMessageContainerApp({needed: true}, true)
+
+  let renderedMessage = root.querySelector('div.message p')
+  expect(renderedMessage).toBeNull()
+
+  await safeDelay(GET_DATA_DELAY)
+
+  renderedMessage = root.querySelector('div.message p')
+  expectTextContent(renderedMessage).toBe('Hello')
+})
+
 test('withDataProviders (needed=true) renders custom error when it fails (ABORT on response.ABORT)', async () => {
   dataProvidersConfig({responseHandler: (response) => ({abort: ABORT}), errorComponent: <div>Failed</div>})
   const {root} = renderMessageContainerApp({needed: true})
@@ -126,6 +138,30 @@ test('withDataProviders polling', async () => {
     initialData: {data: 'init'},
     getData: [getDataWithCount, {data: 'count:'}, 0]
   })
+  const countRegexp = /^count:(\d+)$/
+
+  let renderedMessage = root.querySelector('div.message p')
+  expectTextContent(renderedMessage).toBe('init')
+
+  await safeDelay(POLLING_DELAY)
+  renderedMessage = root.querySelector('div.message p')
+  expectTextContent(renderedMessage).toMatch(countRegexp)
+  const firstCount = parseInt(countRegexp.exec(renderedMessage.textContent)[1], 10)
+
+  await safeDelay(POLLING_DELAY)
+  renderedMessage = root.querySelector('div.message p')
+  expectTextContent(renderedMessage).toMatch(countRegexp)
+  const secondCount = parseInt(countRegexp.exec(renderedMessage.textContent)[1], 10)
+  expect(secondCount).toBe(firstCount + 1)
+})
+
+test('withDataProviders polling - get/onData as functions', async () => {
+  const POLLING_DELAY = 0.2 * 1000
+  const {root} = renderMessageContainerApp({
+    polling: POLLING_DELAY,
+    initialData: {data: 'init'},
+    getData: [getDataWithCount, {data: 'count:'}, 0]
+  }, true)
   const countRegexp = /^count:(\d+)$/
 
   let renderedMessage = root.querySelector('div.message p')
@@ -336,8 +372,8 @@ test('failing refetch should delete component data', async () => {
 
 // common functions, components
 
-function renderMessageContainerApp(dpSettings) {
-  const MessageContainer = messageContainer(dpSettings)
+function renderMessageContainerApp(dpSettings, useFunctions) {
+  const MessageContainer = useFunctions ? fnMessageContainer(dpSettings) : messageContainer(dpSettings)
   return renderApp(<MessageContainer />)
 }
 
@@ -379,6 +415,16 @@ function messageProvider(dpSettings) {
   }
 }
 
+function fnMessageProvider(dpSettings) {
+  return {
+    ref: 'message',
+    getData: () => getData({data: 'Hello'}),
+    onData: (...params) => updateMessage(...params),
+    needed: false,
+    ...dpSettings
+  }
+}
+
 function Message({content, dataProviderLoading}) {
   return (
     <div className="message">
@@ -391,6 +437,13 @@ function Message({content, dataProviderLoading}) {
 function messageContainer(dpSettings) {
   return compose(
     withDataProviders(() => [messageProvider(dpSettings)]),
+    connect((state) => ({content: state.content})),
+  )(Message)
+}
+
+function fnMessageContainer(dpSettings) {
+  return compose(
+    withDataProviders(() => [fnMessageProvider(dpSettings)]),
     connect((state) => ({content: state.content})),
   )(Message)
 }
