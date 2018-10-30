@@ -27,13 +27,12 @@ class BlogPost extends React.Component {
   }
 }
 
-const updateBlogPost = (blogPostId) => (ref, data, dispatch) => {
-  dispatch({
+const updateBlogPost = (blogPostId) => (
+  {
     type: 'on-blog-post-data',
     payload: {blogPostId, data},
-    description: `DataProvider ref=${ref}`,
-  })
-}
+  }
+)
 
 compose(
   withDataProviders((props) => [
@@ -46,7 +45,7 @@ compose(
       getData: () => fetch(`/api/blog-post/${props.blogPostId}`),
       // What to do with obtained data. Dispatch is taken from context,
       // which is the case if you are using this with redux and react-redux.
-      onData: (ref, data, dispatch) => updateBlogPost(props.blogPostId),
+      onData: (ref, data, dispatch) => dispatch(updateBlogPost(props.blogPostId)),
       // How often to refetch data, in milliseconds
       polling: 10 * 60 * 1000,
       // The component is not rendered until data is fetched.
