@@ -5,7 +5,7 @@
   "dependencies": {
     "babel-polyfill": "^6.26.0",
     "bluebird": "^3.5.1",
-    "data-provider": "file:../",
+    "data-provider": "^0.3.1",
     "immutability-helper": "^2.6.4",
     "prop-types": "^15.6.0",
     "react": "^16.1.1",
