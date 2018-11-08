@@ -52,7 +52,7 @@ compose(
       // Defaults to true; false can be used for eager pre-fetching of data for child
       // components
       needed: true,
-      // How long to keep the data alive, so it isn't refetched unnecessarily 
+      // How long to keep the data alive, so it isn't refetched unnecessarily
       // Optional, defaults to 0 (disabled), in milliseconds
       keepAliveFor: 10 * 60 * 1000,
       // Optionally, the (first) fetch can be skipped by providing initialData (for
@@ -61,7 +61,7 @@ compose(
       // Optionally, override the default responseHandler behavior,
       // see Global Configuration section for details
       responseHandler: ...,
-      // Optionally, override the default loading or error component by defining your own, or 
+      // Optionally, override the default loading or error component by defining your own, or
       // set it null to disable
       loadingComponent: <MyLoadingComponent />,
       errorComponent: <MyErrorComponent />
@@ -85,7 +85,7 @@ Optional overridable settings:
  * `errorComponent` - component to display when DataProvider fails initial fetch or refetch
  * `fetchTimeout` - time in milliseconds after which a new fetch (user supplied `getData`) is called. Default is 30s
  * `maxTimeoutRetries` - max number of retries of the `getData` call after timeout. Default is 5
- 
+
 #### Example
 
 ```js
@@ -97,3 +97,12 @@ dataProvidersConfig({
   maxTimeoutRetries: 1
 })
 ```
+
+## Local development
+
+- delete `examples/node_modules`
+- in `examples/package.json` change data-provider dependency to
+```
+"data-provider": "file:../",
+```
+(Tested on Linux, you might need to modify the local path on Windows.)
